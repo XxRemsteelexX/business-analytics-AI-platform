@@ -16,7 +16,6 @@ COPY . .
 # Set environment variables for production
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
-ENV PORT=7860
 
 # Generate Prisma client before build
 RUN npx prisma generate
@@ -24,8 +23,8 @@ RUN npx prisma generate
 # Build the application with more memory
 RUN NODE_OPTIONS="--max-old-space-size=4096" npm run build
 
-# Expose the port that Hugging Face Spaces expects
-EXPOSE 7860
+# Railway will provide PORT environment variable
+EXPOSE 3000
 
-# Start the application
-CMD ["npm", "start", "--", "-p", "7860"]
+# Start the application (Next.js will use PORT env var automatically)
+CMD ["npm", "start"]
