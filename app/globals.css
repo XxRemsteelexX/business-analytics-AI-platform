@@ -1,0 +1,904 @@
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Thompson PMC Brand Colors and Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Catamaran:wght@400;500;600;700&family=Montserrat:wght@400;500;600;700&display=swap');
+
+:root {
+  /* Thompson PMC Brand Colors */
+  --thompson-lime: #a7ff03;
+  --thompson-navy: #0b1642;
+  --thompson-blue: #17296f;
+  --thompson-dark-gray: #282828;
+  --thompson-light-gray: #f1f1f1;
+  --thompson-bg-light: #fafafa;
+  --thompson-white: #ffffff;
+  
+  /* Professional gradients */
+  --gradient-primary: linear-gradient(135deg, #0b1642 0%, #17296f 100%);
+  --gradient-accent: linear-gradient(135deg, #a7ff03 0%, #7acc00 100%);
+  
+  /* Semantic colors */
+  --background: #ffffff;
+  --foreground: var(--thompson-dark-gray);
+  --card: #ffffff;
+  --card-foreground: var(--thompson-dark-gray);
+  --popover: #ffffff;
+  --popover-foreground: var(--thompson-dark-gray);
+  --primary: var(--thompson-navy);
+  --primary-foreground: var(--thompson-white);
+  --secondary: var(--thompson-light-gray);
+  --secondary-foreground: var(--thompson-dark-gray);
+  --muted: var(--thompson-light-gray);
+  --muted-foreground: #6c757d;
+  --accent: var(--thompson-lime);
+  --accent-foreground: var(--thompson-navy);
+  --destructive: #dc3545;
+  --destructive-foreground: var(--thompson-white);
+  --border: #dee2e6;
+  --input: var(--thompson-light-gray);
+  --ring: var(--thompson-lime);
+  --radius: 0.375rem;
+}
+
+* {
+  border-color: hsl(var(--border));
+}
+
+body {
+  font-family: 'Catamaran', Arial, sans-serif;
+  background-color: var(--thompson-bg-light);
+  color: var(--thompson-dark-gray);
+  line-height: 1.6;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Montserrat', Arial, sans-serif;
+  font-weight: 600;
+  color: var(--thompson-navy);
+}
+
+/* Thompson PMC Typography Scale */
+.text-h1 {
+  font-family: 'Montserrat', Arial, sans-serif;
+  font-size: 40px;
+  font-weight: 600;
+  line-height: 1.2;
+  color: var(--thompson-navy);
+}
+
+.text-h2 {
+  font-family: 'Montserrat', Arial, sans-serif;
+  font-size: 30px;
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--thompson-navy);
+}
+
+.text-body {
+  font-family: 'Catamaran', Arial, sans-serif;
+  font-size: 20px;
+  line-height: 1.6;
+  color: var(--thompson-dark-gray);
+}
+
+/* CEO-focused component classes */
+.ceo-card {
+  background: var(--thompson-white);
+  border: 1px solid #e3e8ee;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(11, 22, 66, 0.08);
+  transition: box-shadow 0.2s ease;
+}
+
+.ceo-card:hover {
+  box-shadow: 0 4px 16px rgba(11, 22, 66, 0.12);
+}
+
+.ceo-button-primary {
+  background: var(--gradient-accent);
+  color: var(--thompson-navy);
+  font-family: 'Montserrat', Arial, sans-serif;
+  font-weight: 600;
+  border: none;
+  border-radius: 8px;
+  padding: 12px 24px;
+  transition: all 0.2s ease;
+  text-transform: none;
+  letter-spacing: 0.5px;
+}
+
+.ceo-button-primary:hover {
+  background: var(--thompson-lime);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(167, 255, 3, 0.3);
+}
+
+.ceo-button-secondary {
+  background: var(--thompson-navy);
+  color: var(--thompson-white);
+  font-family: 'Montserrat', Arial, sans-serif;
+  font-weight: 600;
+  border: none;
+  border-radius: 8px;
+  padding: 12px 24px;
+  transition: all 0.2s ease;
+  text-transform: none;
+  letter-spacing: 0.5px;
+}
+
+.ceo-button-secondary:hover {
+  background: var(--thompson-blue);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(23, 41, 111, 0.3);
+}
+
+/* Chart container styles */
+.chart-container {
+  background: var(--thompson-white);
+  border-radius: 12px;
+  padding: 24px;
+  border: 1px solid #e3e8ee;
+  position: relative;
+}
+
+.chart-expand-button {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid var(--thompson-navy);
+  border-radius: 6px;
+  padding: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.chart-expand-button:hover {
+  background: var(--thompson-lime);
+  border-color: var(--thompson-lime);
+}
+
+/* Executive vs Analyst mode toggle */
+.mode-toggle {
+  background: var(--thompson-light-gray);
+  border-radius: 8px;
+  padding: 4px;
+  display: inline-flex;
+  gap: 2px;
+}
+
+.mode-toggle-button {
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-family: 'Montserrat', Arial, sans-serif;
+  font-weight: 500;
+  font-size: 14px;
+  border: none;
+  background: transparent;
+  color: var(--thompson-dark-gray);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.mode-toggle-button.active {
+  background: var(--thompson-navy);
+  color: var(--thompson-white);
+  box-shadow: 0 2px 4px rgba(11, 22, 66, 0.2);
+}
+
+/* Professional spacing grid */
+.space-grid-8 > * + * {
+  margin-top: 8px;
+}
+
+.space-grid-16 > * + * {
+  margin-top: 16px;
+}
+
+.space-grid-24 > * + * {
+  margin-top: 24px;
+}
+
+/* KPI card styles */
+.kpi-card {
+  background: linear-gradient(135deg, var(--thompson-white) 0%, #f8f9fa 100%);
+  border: 1px solid #e3e8ee;
+  border-radius: 12px;
+  padding: 24px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.kpi-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: var(--gradient-accent);
+}
+
+.kpi-value {
+  font-family: 'Montserrat', Arial, sans-serif;
+  font-size: 36px;
+  font-weight: 700;
+  color: var(--thompson-navy);
+  line-height: 1;
+  margin-bottom: 8px;
+}
+
+.kpi-label {
+  font-family: 'Catamaran', Arial, sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  color: #6c757d;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.kpi-change {
+  font-family: 'Catamaran', Arial, sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  margin-top: 8px;
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+
+.kpi-change.positive {
+  color: #28a745;
+  background: #d4edda;
+}
+
+.kpi-change.negative {
+  color: #dc3545;
+  background: #f8d7da;
+}
+
+/* Accessibility and focus states */
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid var(--thompson-lime);
+  outline-offset: 2px;
+}
+
+/* Professional table styles */
+.professional-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--thompson-white);
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(11, 22, 66, 0.08);
+}
+
+.professional-table th {
+  background: var(--thompson-navy);
+  color: var(--thompson-white);
+  font-family: 'Montserrat', Arial, sans-serif;
+  font-weight: 600;
+  font-size: 14px;
+  padding: 16px;
+  text-align: left;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.professional-table td {
+  padding: 12px 16px;
+  border-bottom: 1px solid #e9ecef;
+  font-family: 'Catamaran', Arial, sans-serif;
+  font-size: 14px;
+}
+
+.professional-table tr:hover {
+  background: #f8f9fa;
+}
+
+/* Thompson PMC brand utilities */
+.thompson-navy { color: var(--thompson-navy); }
+.thompson-blue { color: var(--thompson-blue); }
+.thompson-lime { color: var(--thompson-lime); }
+.bg-thompson-navy { background-color: var(--thompson-navy); }
+.bg-thompson-blue { background-color: var(--thompson-blue); }
+.bg-thompson-lime { background-color: var(--thompson-lime); }
+
+/* Animation utilities for CEO presentations */
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-slide-up {
+  animation: slideInUp 0.5s ease-out;
+}
+
+/* Chart loading skeleton */
+.chart-skeleton {
+  background: linear-gradient(90deg, #f0f2f5 25%, rgba(240, 242, 245, 0.5) 50%, #f0f2f5 75%);
+  background-size: 200% 100%;
+  animation: loading 1.5s infinite;
+}
+
+@keyframes loading {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+h1 {
+  font-size: 2.5rem;
+  line-height: 1.2;
+}
+
+h2 {
+  font-size: 1.875rem;
+  line-height: 1.3;
+}
+
+h3 {
+  font-size: 1.5rem;
+  line-height: 1.4;
+}
+
+/* Thompson PMC specific styles */
+.thompson-gradient {
+  background: var(--gradient-primary);
+}
+
+.thompson-gradient-accent {
+  background: var(--gradient-accent);
+}
+
+.thompson-lime {
+  color: var(--thompson-lime);
+}
+
+.thompson-navy {
+  color: var(--thompson-navy);
+}
+
+.thompson-blue {
+  color: var(--thompson-blue);
+}
+
+.bg-thompson-navy {
+  background-color: var(--thompson-navy);
+}
+
+.bg-thompson-lime {
+  background-color: var(--thompson-lime);
+}
+
+.bg-thompson-blue {
+  background-color: var(--thompson-blue);
+}
+
+.bg-thompson-light {
+  background-color: var(--thompson-light-gray);
+}
+
+.text-thompson-lime {
+  color: var(--thompson-lime);
+}
+
+.text-thompson-navy {
+  color: var(--thompson-navy);
+}
+
+.text-thompson-blue {
+  color: var(--thompson-blue);
+}
+
+/* Professional CEO styling */
+.ceo-card {
+  background: var(--thompson-white);
+  border: 1px solid rgba(11, 22, 66, 0.1);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(11, 22, 66, 0.08);
+  transition: all 0.3s ease;
+}
+
+.ceo-card:hover {
+  box-shadow: 0 8px 24px rgba(11, 22, 66, 0.12);
+  transform: translateY(-2px);
+}
+
+.ceo-button-primary {
+  background: var(--gradient-primary);
+  color: var(--thompson-white);
+  border: none;
+  border-radius: 6px;
+  padding: 12px 24px;
+  font-weight: 600;
+  font-size: 16px;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(11, 22, 66, 0.15);
+}
+
+.ceo-button-primary:hover {
+  box-shadow: 0 6px 18px rgba(11, 22, 66, 0.2);
+  transform: translateY(-1px);
+}
+
+.ceo-button-accent {
+  background: var(--gradient-accent);
+  color: var(--thompson-navy);
+  border: none;
+  border-radius: 6px;
+  padding: 12px 24px;
+  font-weight: 600;
+  font-size: 16px;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(167, 255, 3, 0.15);
+}
+
+.ceo-button-accent:hover {
+  box-shadow: 0 6px 18px rgba(167, 255, 3, 0.2);
+  transform: translateY(-1px);
+}
+
+/* Chart styling */
+.chart-container {
+  background: var(--thompson-white);
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 4px 16px rgba(11, 22, 66, 0.08);
+  border: 1px solid rgba(11, 22, 66, 0.05);
+}
+
+/* Professional animations */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes countUp {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 0.6s ease-out forwards;
+}
+
+.animate-count-up {
+  animation: countUp 1.5s ease-out forwards;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  h1 {
+    font-size: 2rem;
+  }
+  
+  h2 {
+    font-size: 1.5rem;
+  }
+  
+  .ceo-card {
+    margin: 16px;
+    border-radius: 12px;
+  }
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--thompson-light-gray);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--thompson-blue);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--thompson-navy);
+}
+
+/* Loading states */
+.loading-shimmer {
+  background: linear-gradient(
+    90deg,
+    var(--thompson-light-gray) 25%,
+    rgba(241, 241, 241, 0.5) 50%,
+    var(--thompson-light-gray) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+/* Fix dropdown menu transparency issues */
+[data-radix-popper-content-wrapper] {
+  z-index: 50 !important;
+}
+
+[data-radix-select-content] {
+  background: var(--thompson-white) !important;
+  border: 1px solid #e3e8ee !important;
+  border-radius: 8px !important;
+  box-shadow: 0 4px 16px rgba(11, 22, 66, 0.15) !important;
+  backdrop-filter: blur(8px) !important;
+  z-index: 50 !important;
+}
+
+[data-radix-select-content] [data-radix-select-item] {
+  background: transparent !important;
+  color: var(--thompson-dark-gray) !important;
+  padding: 8px 12px !important;
+  font-family: 'Catamaran', Arial, sans-serif !important;
+  font-size: 14px !important;
+  cursor: pointer !important;
+  border-radius: 4px !important;
+  margin: 2px 4px !important;
+}
+
+[data-radix-select-content] [data-radix-select-item]:hover {
+  background: var(--thompson-light-gray) !important;
+  color: var(--thompson-navy) !important;
+}
+
+[data-radix-select-content] [data-radix-select-item][data-highlighted] {
+  background: var(--thompson-navy) !important;
+  color: var(--thompson-white) !important;
+}
+
+/* Fix chart modal/dialog transparency */
+[data-radix-dialog-overlay] {
+  background: rgba(11, 22, 66, 0.6) !important;
+  backdrop-filter: blur(4px) !important;
+  z-index: 50 !important;
+}
+
+[data-radix-dialog-content] {
+  background: var(--thompson-white) !important;
+  border: 1px solid #e3e8ee !important;
+  border-radius: 12px !important;
+  box-shadow: 0 8px 32px rgba(11, 22, 66, 0.2) !important;
+  z-index: 51 !important;
+  max-width: 90vw !important;
+  max-height: 90vh !important;
+}
+
+/* Enhanced chart modal styling */
+.chart-modal-content {
+  background: var(--thompson-white);
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 8px 32px rgba(11, 22, 66, 0.2);
+  border: 1px solid #e3e8ee;
+  max-width: 95vw;
+  max-height: 90vh;
+  overflow: auto;
+}
+
+.chart-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #e3e8ee;
+}
+
+.chart-modal-title {
+  font-family: 'Montserrat', Arial, sans-serif;
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--thompson-navy);
+  margin: 0;
+}
+
+.chart-modal-close {
+  background: none;
+  border: none;
+  font-size: 24px;
+  color: var(--thompson-dark-gray);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.chart-modal-close:hover {
+  background: var(--thompson-light-gray);
+  color: var(--thompson-navy);
+}
+
+/* Popover and tooltip fixes */
+[data-radix-popover-content] {
+  background: var(--thompson-white) !important;
+  border: 1px solid #e3e8ee !important;
+  border-radius: 8px !important;
+  box-shadow: 0 4px 16px rgba(11, 22, 66, 0.15) !important;
+  z-index: 50 !important;
+}
+
+[data-radix-tooltip-content] {
+  background: var(--thompson-navy) !important;
+  color: var(--thompson-white) !important;
+  border-radius: 6px !important;
+  padding: 8px 12px !important;
+  font-size: 12px !important;
+  font-family: 'Catamaran', Arial, sans-serif !important;
+  box-shadow: 0 4px 12px rgba(11, 22, 66, 0.2) !important;
+  z-index: 60 !important;
+}
+
+/* Sheet selector dropdown styling */
+.sheet-selector [data-radix-select-content] {
+  min-width: 200px;
+  background: var(--thompson-white) !important;
+}
+
+/* Custom chart builder dropdown styling */
+.custom-chart-builder [data-radix-select-content] {
+  min-width: 160px;
+  background: var(--thompson-white) !important;
+}
+
+/* Ensure dropdown items are properly styled */
+.dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  font-size: 14px;
+  cursor: pointer;
+  border-radius: 4px;
+  margin: 2px 4px;
+  background: transparent;
+  color: var(--thompson-dark-gray);
+  transition: all 0.2s ease;
+}
+
+.dropdown-item:hover {
+  background: var(--thompson-light-gray);
+  color: var(--thompson-navy);
+}
+
+.dropdown-item[data-highlighted] {
+  background: var(--thompson-navy);
+  color: var(--thompson-white);
+}
+
+/* AGGRESSIVE OVERRIDES FOR TRANSPARENCY ISSUES */
+
+/* Force solid backgrounds for ALL select components */
+.select-content,
+[class*="select-content"],
+[data-state*="select"],
+[role="listbox"],
+[cmdk-list],
+[cmdk-group] {
+  background-color: white !important;
+  background: white !important;
+  opacity: 1 !important;
+}
+
+/* Force solid backgrounds for dropdown menus */
+div[role="menu"],
+div[role="listbox"],
+div[data-radix-select-content],
+div[data-radix-popper-content],
+.dropdown-menu,
+.select-dropdown,
+.menu-content {
+  background-color: white !important;
+  background: white !important;
+  opacity: 1 !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+/* Force solid white background for all modal/dialog overlays */
+div[data-radix-dialog-overlay],
+div[role="dialog"],
+.modal-overlay,
+.dialog-overlay {
+  background-color: rgba(0, 0, 0, 0.8) !important;
+  background: rgba(0, 0, 0, 0.8) !important;
+  backdrop-filter: blur(4px) !important;
+}
+
+/* Force solid backgrounds for modal content */
+div[data-radix-dialog-content],
+div[role="dialog"] > div,
+.modal-content,
+.dialog-content {
+  background-color: white !important;
+  background: white !important;
+  opacity: 1 !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+/* Chart modal specific overrides */
+.chart-modal,
+.chart-expand-modal,
+[data-testid="chart-modal"],
+[class*="chart-modal"] {
+  background-color: white !important;
+  background: white !important;
+  opacity: 1 !important;
+}
+
+/* Select trigger and content overrides */
+button[role="combobox"],
+button[data-radix-select-trigger],
+.select-trigger {
+  background-color: white !important;
+  background: white !important;
+  border: 1px solid #e3e8ee !important;
+}
+
+/* Ensure all dropdown items have solid backgrounds */
+div[role="option"],
+[data-radix-select-item],
+.select-item,
+.dropdown-item,
+.menu-item {
+  background-color: transparent !important;
+  background: transparent !important;
+}
+
+div[role="option"]:hover,
+[data-radix-select-item]:hover,
+.select-item:hover,
+.dropdown-item:hover,
+.menu-item:hover {
+  background-color: #f1f1f1 !important;
+  background: #f1f1f1 !important;
+}
+
+div[role="option"][data-highlighted],
+[data-radix-select-item][data-highlighted],
+.select-item[data-highlighted],
+.dropdown-item[data-highlighted],
+.menu-item[data-highlighted] {
+  background-color: #0b1642 !important;
+  background: #0b1642 !important;
+  color: white !important;
+}
+
+/* Command palette / search dropdown overrides */
+[cmdk-root],
+[cmdk-dialog],
+[cmdk-overlay] {
+  background-color: white !important;
+  background: white !important;
+}
+
+/* Popover overrides */
+[data-radix-popover-content] {
+  background-color: white !important;
+  background: white !important;
+  border: 1px solid #e3e8ee !important;
+  box-shadow: 0 4px 16px rgba(11, 22, 66, 0.15) !important;
+}
+
+/* Sheet selector specific styling */
+.sheet-selector button,
+.sheet-selector div[role="listbox"],
+.sheet-selector [data-radix-select-content] {
+  background-color: white !important;
+  background: white !important;
+  opacity: 1 !important;
+}
+
+/* Custom chart builder specific styling */
+.custom-chart-builder select,
+.custom-chart-builder button[role="combobox"],
+.custom-chart-builder div[role="listbox"],
+.custom-chart-builder [data-radix-select-content] {
+  background-color: white !important;
+  background: white !important;
+  opacity: 1 !important;
+}
+
+/* Additional force overrides for stubborn components */
+* [data-state="open"][role="listbox"],
+* [data-state="open"][role="menu"],
+* [aria-expanded="true"] + div,
+* div[style*="position: absolute"],
+* div[style*="position: fixed"] {
+  background-color: white !important;
+  opacity: 1 !important;
+}
+
+/* Make sure chart containers in modals are solid */
+.recharts-wrapper,
+.recharts-surface,
+svg.recharts-surface {
+  background-color: white !important;
+  background: white !important;
+}
+
+/* Final nuclear option - override any inline styles */
+[style*="background: transparent"],
+[style*="background-color: transparent"],
+[style*="opacity: 0"] {
+  background-color: white !important;
+  background: white !important;
+  opacity: 1 !important;
+}
+
+/* Special handling for chart modals */
+.chart-modal-container {
+  background-color: rgba(0, 0, 0, 0.8) !important;
+}
+
+.chart-modal-container > div {
+  background-color: white !important;
+  background: white !important;
+  opacity: 1 !important;
+  border-radius: 12px !important;
+  padding: 24px !important;
+  margin: 20px !important;
+  box-shadow: 0 8px 32px rgba(11, 22, 66, 0.2) !important;
+}
+
+/* Override Tailwind utility classes that might be causing transparency */
+.bg-background {
+  background-color: #ffffff !important;
+}
+
+.bg-popover {
+  background-color: #ffffff !important;
+}
+
+.bg-card {
+  background-color: #ffffff !important;
+}
+
+.bg-transparent {
+  background-color: #ffffff !important;
+}
+
+/* Force all elements with these classes to be opaque */
+.opacity-0,
+.opacity-10,
+.opacity-20,
+.opacity-30,
+.opacity-40,
+.opacity-50 {
+  opacity: 1 !important;
+}

@@ -1,0 +1,22 @@
+{
+  "buildCommand": "npm run build",
+  "outputDirectory": ".next",
+  "framework": "nextjs",
+  "regions": ["iad1"],
+  "functions": {
+    "app/api/upload": {
+      "maxDuration": 30
+    },
+    "app/api/analyze": {
+      "maxDuration": 60
+    },
+    "app/api/chat": {
+      "maxDuration": 30
+    }
+  },
+  "env": {
+    "NEXTAUTH_SECRET": "@nextauth_secret",
+    "ABACUSAI_API_KEY": "@abacus_api_key",
+    "NEXTAUTH_URL": "https://thompson-pmc-analytics.vercel.app"
+  }
+}

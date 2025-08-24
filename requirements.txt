@@ -1,0 +1,2 @@
+# This file is for Hugging Face Spaces to recognize it as a Docker space
+# The actual dependencies are managed by package.json for Node.js
