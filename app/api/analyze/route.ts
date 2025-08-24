@@ -177,7 +177,7 @@ Respond with raw JSON only.`
         'Authorization': `Bearer ${process.env.GROQ_API_KEY || 'gsk_demo_key_use_your_own'}`
       },
       body: JSON.stringify({
-        model: 'llama3-8b-8192',
+        model: 'llama-3.1-70b-versatile',
         messages: [{ role: 'user', content: prompt }],
         max_tokens: 1000
       })
@@ -238,7 +238,7 @@ Respond with raw JSON only.`
         'Authorization': `Bearer ${process.env.GROQ_API_KEY || 'gsk_demo_key_use_your_own'}`
       },
       body: JSON.stringify({
-        model: 'llama3-8b-8192',
+        model: 'llama-3.1-70b-versatile',
         messages: [{ role: 'user', content: prompt }],
         max_tokens: 1000
       })
