@@ -18,8 +18,11 @@ ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV PORT=7860
 
-# Build the application
-RUN npm run build
+# Generate Prisma client before build
+RUN npx prisma generate
+
+# Build the application with more memory
+RUN NODE_OPTIONS="--max-old-space-size=4096" npm run build
 
 # Expose the port that Hugging Face Spaces expects
 EXPOSE 7860
