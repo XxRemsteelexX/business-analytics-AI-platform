@@ -68,8 +68,10 @@ export function AnalysisResults({ fileData, onAnalysisComplete }: AnalysisResult
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ 
-          fileId: fileData.id,
-          sheetName: fileData.selectedSheet
+          fileId: fileData.id || fileData.filename,
+          sheetName: fileData.selectedSheet,
+          originalName: fileData.originalName,
+          mimeType: fileData.mimeType || 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
         }),
       })
 
