@@ -107,76 +107,26 @@ export function ChatInterface({ fileData, analysisData }: ChatInterfaceProps) {
         throw new Error('Failed to get AI response')
       }
 
-      const reader = response.body?.getReader()
-      if (!reader) {
-        throw new Error('No reader available')
-      }
+      const data = await response.json()
       
-      const decoder = new TextDecoder()
-      let aiResponseContent = ''
-      let buffer = ''
-      let partialRead = ''
-
-      while (true) {
-        const { done, value } = await reader.read()
-        if (done) break
-
-        partialRead += decoder.decode(value, { stream: true })
-        let lines = partialRead.split('\n')
-        partialRead = lines.pop() || ''
-
-        for (const line of lines) {
-          if (line.startsWith('data: ')) {
-            const data = line.slice(6)
-            if (data === '[DONE]') {
-              // Stream finished
-              setMessages(prev => 
-                prev.map(msg => 
-                  msg.id === loadingMessage.id 
-                    ? { ...msg, content: aiResponseContent, isGenerating: false }
-                    : msg
-                )
-              )
-              return
-            }
-
-            try {
-              const parsed = JSON.parse(data)
-              if (parsed.status === 'processing') {
-                // Update loading message
-                setMessages(prev => 
-                  prev.map(msg => 
-                    msg.id === loadingMessage.id 
-                      ? { ...msg, content: parsed.message || 'Generating response...' }
-                      : msg
-                  )
-                )
-              } else if (parsed.status === 'completed') {
-                // Final response received
-                const finalMessage: ChatMessage = {
-                  id: loadingMessage.id,
-                  role: 'assistant',
-                  content: parsed.result.content || 'Analysis complete.',
-                  timestamp: new Date(),
-                  chartData: parsed.result.chartData,
-                  isGenerating: false
-                }
-
-                setMessages(prev => 
-                  prev.map(msg => 
-                    msg.id === loadingMessage.id ? finalMessage : msg
-                  )
-                )
-                return
-              } else if (parsed.status === 'error') {
-                throw new Error(parsed.message || 'AI generation failed')
-              }
-            } catch (e) {
-              // Skip invalid JSON
-              continue
-            }
-          }
+      if (data.status === 'completed') {
+        // Final response received
+        const finalMessage: ChatMessage = {
+          id: loadingMessage.id,
+          role: 'assistant',
+          content: data.result.content || 'Analysis complete.',
+          timestamp: new Date(),
+          chartData: data.result.chartData,
+          isGenerating: false
         }
+
+        setMessages(prev => 
+          prev.map(msg => 
+            msg.id === loadingMessage.id ? finalMessage : msg
+          )
+        )
+      } else {
+        throw new Error('Failed to get AI response')
       }
 
     } catch (error) {
@@ -275,7 +225,7 @@ export function ChatInterface({ fileData, analysisData }: ChatInterfaceProps) {
                     <User className="w-5 h-5 text-white mt-0.5 flex-shrink-0" />
                   )}
                   <div className="flex-1">
-                    <p className={`text-sm ${message.role === 'user' ? 'text-white' : 'text-gray-800'}`}>
+                    <p className={`text-sm font-medium ${message.role === 'user' ? 'text-white' : 'text-gray-900'}`}>
                       {message.content}
                       {message.isGenerating && (
                         <Loader2 className="w-4 h-4 inline-block ml-2 animate-spin" />
