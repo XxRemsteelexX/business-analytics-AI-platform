@@ -1,8 +1,5 @@
 
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
-import { prisma } from '@/lib/db'
 import { writeFile, mkdir, readFile } from 'fs/promises'
 import { join } from 'path'
 import { randomUUID } from 'crypto'
@@ -12,10 +9,6 @@ export const dynamic = 'force-dynamic'
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
 
     const formData = await request.formData()
     const file = formData.get('file') as File
@@ -70,24 +63,13 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Save file record to database
-    const uploadedFile = await prisma.uploadedFile.create({
-      data: {
-        userId: (session.user as any).id,
-        filename: uniqueFilename,
-        originalName: file.name,
-        mimeType: file.type,
-        size: file.size,
-        filepath: filePath,
-      }
-    })
-
+    // Return file info without database
     return NextResponse.json({
-      id: uploadedFile.id,
-      filename: uploadedFile.filename,
-      originalName: uploadedFile.originalName,
-      size: uploadedFile.size,
-      createdAt: uploadedFile.createdAt,
+      id: uniqueFilename,
+      filename: uniqueFilename,
+      originalName: file.name,
+      size: file.size,
+      createdAt: new Date(),
       sheetNames: sheetNames,
       hasMultipleSheets: sheetNames.length > 1
     })

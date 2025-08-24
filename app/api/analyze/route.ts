@@ -1,9 +1,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
-import { prisma } from '@/lib/db'
 import { readFile } from 'fs/promises'
+import { join } from 'path'
 import * as XLSX from 'xlsx'
 import papa from 'papaparse'
 import mammoth from 'mammoth'
@@ -21,50 +19,37 @@ interface DataSummary {
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    const { fileId, sheetName, originalName, mimeType } = await request.json()
 
-    const { fileId, sheetName } = await request.json()
-
-    // Get file from database
-    const uploadedFile = await prisma.uploadedFile.findFirst({
-      where: {
-        id: fileId,
-        userId: (session.user as any).id
-      }
-    })
-
-    if (!uploadedFile) {
-      return NextResponse.json({ error: 'File not found' }, { status: 404 })
-    }
+    // Construct file path from fileId (which is the filename)
+    const uploadsDir = join(process.cwd(), 'uploads')
+    const filepath = join(uploadsDir, fileId)
 
     // Read and parse file based on type
-    const fileBuffer = await readFile(uploadedFile.filepath)
+    const fileBuffer = await readFile(filepath)
     let data: any[] = []
     let extractedText = ''
 
-    if (uploadedFile.mimeType.includes('spreadsheet') || uploadedFile.filename.endsWith('.xlsx')) {
+    if (mimeType.includes('spreadsheet') || fileId.endsWith('.xlsx')) {
       // Parse Excel file
       const workbook = XLSX.read(fileBuffer)
       const selectedSheet = sheetName || workbook.SheetNames[0] // Use provided sheet name or default to first
       const worksheet = workbook.Sheets[selectedSheet]
       data = XLSX.utils.sheet_to_json(worksheet)
-    } else if (uploadedFile.mimeType.includes('csv')) {
+    } else if (mimeType.includes('csv')) {
       // Parse CSV file
       const csvText = fileBuffer.toString('utf-8')
       const parsed = papa.parse(csvText, { header: true })
       data = parsed.data
-    } else if (uploadedFile.mimeType.includes('pdf')) {
+    } else if (mimeType.includes('pdf')) {
       // For PDF files, convert to base64 and send to LLM
       const base64String = fileBuffer.toString('base64')
       extractedText = await extractTextFromPDF(base64String)
-    } else if (uploadedFile.mimeType.includes('wordprocessingml.document')) {
+    } else if (mimeType.includes('wordprocessingml.document')) {
       // Parse Word document
       const result = await mammoth.extractRawText({ buffer: fileBuffer })
       extractedText = result.value
-    } else if (uploadedFile.mimeType.includes('text/plain')) {
+    } else if (mimeType.includes('text/plain')) {
       // Plain text file
       extractedText = fileBuffer.toString('utf-8')
     }
@@ -72,29 +57,13 @@ export async function POST(request: NextRequest) {
     let analysisResult
     if (data.length > 0) {
       // Structured data analysis
-      analysisResult = await analyzeStructuredData(data, uploadedFile.originalName)
+      analysisResult = await analyzeStructuredData(data, originalName || 'uploaded file')
     } else {
       // Text-based analysis
-      analysisResult = await analyzeTextData(extractedText, uploadedFile.originalName)
+      analysisResult = await analyzeTextData(extractedText, originalName || 'uploaded file')
     }
 
-    // Save analysis to database
-    // Handle insights as either string or array - convert array to formatted string
-    const insightsText = Array.isArray(analysisResult.insights) 
-      ? analysisResult.insights.join('\n• ')
-      : analysisResult.insights
-
-    const analysisSession = await prisma.analysisSession.create({
-      data: {
-        userId: (session.user as any).id,
-        fileId: uploadedFile.id,
-        sessionName: `Analysis of ${uploadedFile.originalName}`,
-        summary: analysisResult.summary,
-        insights: insightsText,
-        chartData: analysisResult.charts,
-        chatHistory: []
-      }
-    })
+    // Skip database save, just return results
 
     return NextResponse.json(analysisResult)
 

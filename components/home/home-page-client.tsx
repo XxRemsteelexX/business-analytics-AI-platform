@@ -91,16 +91,9 @@ export function HomePageClient() {
               className="mt-10 flex flex-col sm:flex-row gap-4 justify-center"
             >
               <Button asChild size="lg" className="ceo-button-primary text-lg px-8 py-4">
-                <Link href="/login">
+                <Link href="/dashboard">
                   Get Started
                   <ArrowRight className="ml-2 w-5 h-5" />
-                </Link>
-              </Button>
-              
-              <Button asChild size="lg" variant="outline" className="text-lg px-8 py-4">
-                <Link href="/signup">
-                  Create Account
-                  <ChevronRight className="ml-2 w-5 h-5" />
                 </Link>
               </Button>
             </motion.div>
@@ -162,7 +155,7 @@ export function HomePageClient() {
               professional analytics and stunning visualizations.
             </p>
             <Button asChild size="lg" className="ceo-button-accent text-lg px-8 py-4">
-              <Link href="/signup">
+              <Link href="/dashboard">
                 Start Your Analytics Journey
                 <ArrowRight className="ml-2 w-5 h-5" />
               </Link>
