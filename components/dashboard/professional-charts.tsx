@@ -4,7 +4,7 @@
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, LineChart, Line, PieChart, Pie, Cell } from 'recharts'
 
 // Thompson PMC brand colors for charts
-const CHART_COLORS = ['#5C8A1F', '#0b1642', '#17296f', '#282828', '#60B5FF', '#FF9149', '#FF9898', '#FF90BB']
+const CHART_COLORS = ['#a7ff03', '#0b1642', '#17296f', '#282828', '#60B5FF', '#FF9149', '#FF9898', '#FF90BB']
 
 interface ChartProps {
   charts: any[]
@@ -35,14 +35,14 @@ export default function ProfessionalCharts({ charts }: ChartProps) {
               <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
               <XAxis 
                 dataKey="name" 
-                tick={{ fontSize: 12, fill: '#1a1a1a', fontWeight: 500 }}
+                tick={{ fontSize: 11 }}
                 tickLine={false}
                 angle={-45}
                 textAnchor="end"
                 height={60}
               />
               <YAxis 
-                tick={{ fontSize: 12, fill: '#1a1a1a', fontWeight: 500 }}
+                tick={{ fontSize: 11 }}
                 tickLine={false}
               />
               <Tooltip 
@@ -55,7 +55,7 @@ export default function ProfessionalCharts({ charts }: ChartProps) {
               />
               <Legend 
                 verticalAlign="top" 
-                wrapperStyle={{ fontSize: 12, fontWeight: 500, color: '#1a1a1a' }} 
+                wrapperStyle={{ fontSize: 11 }} 
               />
               <Bar 
                 dataKey="value" 
@@ -75,11 +75,11 @@ export default function ProfessionalCharts({ charts }: ChartProps) {
               <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
               <XAxis 
                 dataKey="index" 
-                tick={{ fontSize: 12, fill: '#1a1a1a', fontWeight: 500 }}
+                tick={{ fontSize: 11 }}
                 tickLine={false}
               />
               <YAxis 
-                tick={{ fontSize: 12, fill: '#1a1a1a', fontWeight: 500 }}
+                tick={{ fontSize: 11 }}
                 tickLine={false}
               />
               <Tooltip 
@@ -92,7 +92,7 @@ export default function ProfessionalCharts({ charts }: ChartProps) {
               />
               <Legend 
                 verticalAlign="top" 
-                wrapperStyle={{ fontSize: 12, fontWeight: 500, color: '#1a1a1a' }} 
+                wrapperStyle={{ fontSize: 11 }} 
               />
               {lineKeys.map((key, keyIndex) => (
                 <Line
@@ -122,7 +122,6 @@ export default function ProfessionalCharts({ charts }: ChartProps) {
                 outerRadius={120}
                 fill="#8884d8"
                 dataKey="value"
-                labelStyle={{ fontSize: 12, fontWeight: 'bold', fill: '#1a1a1a' }}
               >
                 {chart.data.map((entry: any, entryIndex: number) => (
                   <Cell 
@@ -141,7 +140,7 @@ export default function ProfessionalCharts({ charts }: ChartProps) {
               />
               <Legend 
                 verticalAlign="top" 
-                wrapperStyle={{ fontSize: 12, fontWeight: 500, color: '#1a1a1a' }} 
+                wrapperStyle={{ fontSize: 11 }} 
               />
             </PieChart>
           </ResponsiveContainer>
