@@ -33,16 +33,18 @@ Guidelines:
 4. Use professional, confident language appropriate for executive audiences
 5. If the user asks for a specific chart, provide both the analysis and chart recommendation
 
-If the user requests a chart or visualization, respond with JSON in this format:
+IMPORTANT: If the user requests a chart or visualization, you MUST respond with ONLY valid JSON in this exact format:
 {
   "content": "Your analysis and explanation here",
   "chartData": {
     "id": "unique_id",
-    "title": "Professional Chart Title",
+    "title": "Professional Chart Title", 
     "type": "bar|line|pie|scatter",
     "data": [{"name": "Category", "value": 100}]
   }
 }
+
+Do not include any text before or after the JSON. Start your response with { and end with }.
 
 Otherwise, provide a regular text response with insights and recommendations.
 
@@ -66,7 +68,8 @@ Current user question: ${message}`
       body: JSON.stringify({
         messages: messages,
         max_tokens: 1500,
-        temperature: 0.7
+        temperature: 0.3,
+        response_format: { type: "text" }
       }),
     })
 
