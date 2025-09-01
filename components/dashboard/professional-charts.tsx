@@ -1,7 +1,7 @@
 
 'use client'
 
-import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, LineChart, Line, PieChart, Pie, Cell } from 'recharts'
+import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, LineChart, Line, PieChart, Pie, Cell, ScatterChart, Scatter } from 'recharts'
 
 // Thompson PMC brand colors for charts
 const CHART_COLORS = ['#a7ff03', '#0b1642', '#17296f', '#282828', '#60B5FF', '#FF9149', '#FF9898', '#FF90BB']
@@ -143,6 +143,45 @@ export default function ProfessionalCharts({ charts }: ChartProps) {
                 wrapperStyle={{ fontSize: 11 }} 
               />
             </PieChart>
+          </ResponsiveContainer>
+        )
+
+      case 'scatter':
+        return (
+          <ResponsiveContainer {...chartProps}>
+            <ScatterChart data={chart.data}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
+              <XAxis 
+                dataKey="x" 
+                tick={{ fontSize: 11 }}
+                tickLine={false}
+                type="number"
+              />
+              <YAxis 
+                dataKey="y"
+                tick={{ fontSize: 11 }}
+                tickLine={false}
+                type="number"
+              />
+              <Tooltip 
+                contentStyle={{
+                  backgroundColor: '#ffffff',
+                  border: '1px solid #0b1642',
+                  borderRadius: '8px',
+                  fontSize: 12
+                }}
+                formatter={(value, name) => [value, name]}
+              />
+              <Legend 
+                verticalAlign="top" 
+                wrapperStyle={{ fontSize: 11 }} 
+              />
+              <Scatter 
+                dataKey="y" 
+                fill={CHART_COLORS[0]}
+                name="Data Points"
+              />
+            </ScatterChart>
           </ResponsiveContainer>
         )
 
