@@ -9,7 +9,7 @@ Your Thompson PMC Analytics application is configured for a three-tier deploymen
 - Updated all documentation to use plain text
 
 ### 2. LLM Integration Updated
-- Switched from Abacus AI to Bamboo LLM (free tier)
+- Uses private AI processing with Azure OpenAI
 - Updated API endpoints in analyze and chat routes
 - Configured for free hosting compatibility
 
