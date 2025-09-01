@@ -169,7 +169,10 @@ export function FileUpload({ onFileUploaded }: FileUploadProps) {
           {!uploading && !uploadedFile && (
             <Button 
               className="mt-6 ceo-button-primary"
-              onClick={handleSelectFileClick}
+              onClick={(e) => {
+                e.stopPropagation()
+                handleSelectFileClick()
+              }}
             >
               <FileSpreadsheet className="w-5 h-5 mr-2" />
               Select File
