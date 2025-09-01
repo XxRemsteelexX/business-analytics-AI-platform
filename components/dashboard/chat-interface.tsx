@@ -193,19 +193,19 @@ export function ChatInterface({ fileData, analysisData }: ChatInterfaceProps) {
       <div className="flex flex-col h-[600px]">
         {/* Chat Header */}
         <div className="flex items-center p-4 border-b bg-slate-50 rounded-t-lg">
-        <Bot className="w-6 h-6 text-thompson-blue mr-3" />
-        <div>
-          <h3 className="font-semibold text-thompson-navy">AI Analytics Assistant</h3>
-          <p className="text-sm text-gray-600">
-            Ask me to create custom charts and insights from "{fileData.originalName}"
-          </p>
+          <Bot className="w-6 h-6 text-thompson-blue mr-3" />
+          <div>
+            <h3 className="font-semibold text-thompson-navy">AI Analytics Assistant</h3>
+            <p className="text-sm text-gray-600">
+              Ask me to create custom charts and insights from "{fileData.originalName}"
+            </p>
+          </div>
         </div>
-      </div>
 
-      {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        <AnimatePresence>
-          {messages.map((message) => (
+        {/* Messages */}
+        <div className="flex-1 overflow-y-auto p-4 space-y-4">
+          <AnimatePresence>
+            {messages.map((message) => (
             <motion.div
               key={message.id}
               initial={{ opacity: 0, y: 20 }}
@@ -294,9 +294,9 @@ export function ChatInterface({ fileData, analysisData }: ChatInterfaceProps) {
               <Send className="w-4 h-4" />
             )}
           </Button>
+          </div>
         </div>
       </div>
-
     </div>
   )
 }
