@@ -23,6 +23,11 @@ const ProfessionalCharts = dynamic(() => import('./professional-charts'), {
   loading: () => <div className="animate-pulse bg-gray-200 h-64 rounded-lg"></div>
 })
 
+const CustomChartBuilder = dynamic(() => import('@/components/charts/custom-chart-builder'), {
+  ssr: false,
+  loading: () => <div className="animate-pulse bg-gray-200 h-32 rounded-lg"></div>
+})
+
 interface ChatInterfaceProps {
   fileData: any
   analysisData: any
@@ -41,6 +46,7 @@ export function ChatInterface({ fileData, analysisData }: ChatInterfaceProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [inputValue, setInputValue] = useState('')
   const [isGenerating, setIsGenerating] = useState(false)
+  const [customCharts, setCustomCharts] = useState<any[]>([])
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const { toast } = useToast()
 
@@ -162,6 +168,14 @@ export function ChatInterface({ fileData, analysisData }: ChatInterfaceProps) {
   const handleFileSelectClick = () => {
     const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement
     fileInput?.click()
+  }
+
+  const handleCreateCustomChart = (chartConfig: any) => {
+    setCustomCharts(prev => [...prev, chartConfig])
+    toast({
+      title: 'Custom Chart Created',
+      description: `Created "${chartConfig.title}" chart successfully.`,
+    })
   }
 
   const suggestedQuestions = [
@@ -292,6 +306,27 @@ export function ChatInterface({ fileData, analysisData }: ChatInterfaceProps) {
             )}
           </Button>
         </div>
+
+        {/* Custom Chart Builder - Show when we have data */}
+        {analysisData?.data && analysisData?.dataInfo && (
+          <div className="mt-6">
+            <CustomChartBuilder 
+              columns={analysisData.dataInfo.columns || []}
+              numericColumns={analysisData.dataInfo.numericColumns || []}
+              categoricalColumns={analysisData.dataInfo.categoricalColumns || []}
+              data={analysisData.data}
+              onCreateChart={handleCreateCustomChart}
+            />
+          </div>
+        )}
+
+        {/* Display Custom Charts */}
+        {customCharts.length > 0 && (
+          <div className="mt-6 p-4 bg-slate-50 rounded-lg">
+            <h4 className="font-semibold text-thompson-navy mb-4">Your Custom Charts</h4>
+            <ProfessionalCharts charts={customCharts} />
+          </div>
+        )}
       </div>
     </div>
   )
