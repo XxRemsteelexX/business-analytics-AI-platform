@@ -302,17 +302,17 @@ export function AnalysisResults({ fileData, onAnalysisComplete }: AnalysisResult
       )}
 
       {/* Custom Chart Builder - Show when we have data */}
-      {analysisData?.data && analysisData?.columns && (
+      {analysisData && (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.35 }}
         >
           <CustomChartBuilder 
-            columns={analysisData.columns}
-            numericColumns={analysisData.dataInfo?.numericColumns || []}
-            categoricalColumns={analysisData.dataInfo?.categoricalColumns || []}
-            data={analysisData.data}
+            columns={analysisData.columns || []}
+            numericColumns={analysisData.dataInfo?.numericColumns || analysisData.columns || []}
+            categoricalColumns={analysisData.dataInfo?.categoricalColumns || analysisData.columns || []}
+            data={analysisData.data || []}
             onCreateChart={handleCreateCustomChart}
           />
         </motion.div>

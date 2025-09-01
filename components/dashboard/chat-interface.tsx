@@ -308,13 +308,13 @@ export function ChatInterface({ fileData, analysisData }: ChatInterfaceProps) {
         </div>
 
         {/* Custom Chart Builder - Show when we have data */}
-        {analysisData?.data && analysisData?.dataInfo && (
+        {analysisData && (
           <div className="mt-6">
             <CustomChartBuilder 
-              columns={analysisData.dataInfo.columns || []}
-              numericColumns={analysisData.dataInfo.numericColumns || []}
-              categoricalColumns={analysisData.dataInfo.categoricalColumns || []}
-              data={analysisData.data}
+              columns={analysisData.dataInfo?.columns || analysisData.columns || []}
+              numericColumns={analysisData.dataInfo?.numericColumns || []}
+              categoricalColumns={analysisData.dataInfo?.categoricalColumns || []}
+              data={analysisData.data || []}
               onCreateChart={handleCreateCustomChart}
             />
           </div>
