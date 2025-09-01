@@ -23,10 +23,6 @@ const ProfessionalCharts = dynamic(() => import('./professional-charts'), {
   loading: () => <div className="animate-pulse bg-gray-200 h-64 rounded-lg"></div>
 })
 
-const CustomChartBuilder = dynamic(() => import('@/components/charts/custom-chart-builder'), {
-  ssr: false,
-  loading: () => <div className="animate-pulse bg-gray-200 h-32 rounded-lg"></div>
-})
 
 interface ChatInterfaceProps {
   fileData: any
@@ -46,7 +42,6 @@ export function ChatInterface({ fileData, analysisData }: ChatInterfaceProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [inputValue, setInputValue] = useState('')
   const [isGenerating, setIsGenerating] = useState(false)
-  const [customCharts, setCustomCharts] = useState<any[]>([])
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const { toast } = useToast()
 
@@ -170,13 +165,6 @@ export function ChatInterface({ fileData, analysisData }: ChatInterfaceProps) {
     fileInput?.click()
   }
 
-  const handleCreateCustomChart = (chartConfig: any) => {
-    setCustomCharts(prev => [...prev, chartConfig])
-    toast({
-      title: 'Custom Chart Created',
-      description: `Created "${chartConfig.title}" chart successfully.`,
-    })
-  }
 
   const suggestedQuestions = [
     'Create a trend analysis chart',
@@ -201,9 +189,10 @@ export function ChatInterface({ fileData, analysisData }: ChatInterfaceProps) {
   }
 
   return (
-    <div className="flex flex-col h-[600px]">
-      {/* Chat Header */}
-      <div className="flex items-center p-4 border-b bg-slate-50 rounded-t-lg">
+    <div className="space-y-6">
+      <div className="flex flex-col h-[600px]">
+        {/* Chat Header */}
+        <div className="flex items-center p-4 border-b bg-slate-50 rounded-t-lg">
         <Bot className="w-6 h-6 text-thompson-blue mr-3" />
         <div>
           <h3 className="font-semibold text-thompson-navy">AI Analytics Assistant</h3>
@@ -306,28 +295,8 @@ export function ChatInterface({ fileData, analysisData }: ChatInterfaceProps) {
             )}
           </Button>
         </div>
-
-        {/* Custom Chart Builder - Show when we have data */}
-        {analysisData && (
-          <div className="mt-6">
-            <CustomChartBuilder 
-              columns={analysisData.dataInfo?.columns || analysisData.columns || []}
-              numericColumns={analysisData.dataInfo?.numericColumns || []}
-              categoricalColumns={analysisData.dataInfo?.categoricalColumns || []}
-              data={analysisData.data || []}
-              onCreateChart={handleCreateCustomChart}
-            />
-          </div>
-        )}
-
-        {/* Display Custom Charts */}
-        {customCharts.length > 0 && (
-          <div className="mt-6 p-4 bg-slate-50 rounded-lg">
-            <h4 className="font-semibold text-thompson-navy mb-4">Your Custom Charts</h4>
-            <ProfessionalCharts charts={customCharts} />
-          </div>
-        )}
       </div>
+
     </div>
   )
 }
