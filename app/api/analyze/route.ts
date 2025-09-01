@@ -139,14 +139,13 @@ Format your response as JSON:
 Respond with raw JSON only.`
 
   try {
-    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    const response = await fetch('${process.env.AZURE_OPENAI_ENDPOINT}/openai/deployments/${process.env.AZURE_DEPLOYMENT_NAME}/chat/completions?api-version=${process.env.AZURE_OPENAI_VERSION}', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${process.env.GROQ_API_KEY || 'gsk_demo_key_use_your_own'}`
+        'api-key': process.env.AZURE_OPENAI_API_KEY!
       },
       body: JSON.stringify({
-        model: 'llama-3.3-70b-versatile',
         messages: [{ role: 'user', content: prompt }],
         max_tokens: 1000
       })
@@ -200,14 +199,13 @@ Format your response as JSON:
 Respond with raw JSON only.`
 
   try {
-    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    const response = await fetch('${process.env.AZURE_OPENAI_ENDPOINT}/openai/deployments/${process.env.AZURE_DEPLOYMENT_NAME}/chat/completions?api-version=${process.env.AZURE_OPENAI_VERSION}', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${process.env.GROQ_API_KEY || 'gsk_demo_key_use_your_own'}`
+        'api-key': process.env.AZURE_OPENAI_API_KEY!
       },
       body: JSON.stringify({
-        model: 'llama-3.3-70b-versatile',
         messages: [{ role: 'user', content: prompt }],
         max_tokens: 1000
       })
