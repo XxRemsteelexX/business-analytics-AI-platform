@@ -7,6 +7,7 @@ import { DashboardHeader } from './dashboard-header'
 import { FileUpload } from './file-upload'
 import { AnalysisResults } from './analysis-results'
 import { ChatInterface } from './chat-interface'
+import { ComprehensiveDashboard } from './comprehensive-dashboard'
 import { 
   Upload, 
   BarChart3, 
@@ -22,6 +23,7 @@ export function DashboardClient() {
   const [activeTab, setActiveTab] = useState<'upload' | 'analysis' | 'chat'>('upload')
   const [currentFile, setCurrentFile] = useState<any>(null)
   const [analysisData, setAnalysisData] = useState<any>(null)
+  const [customCharts, setCustomCharts] = useState<any[]>([])
 
   const user = session?.user as any
 
@@ -32,6 +34,10 @@ export function DashboardClient() {
 
   const handleAnalysisComplete = (data: any) => {
     setAnalysisData(data)
+  }
+
+  const handleCustomChartsUpdate = (charts: any[]) => {
+    setCustomCharts(charts)
   }
 
   const tabItems = [
@@ -94,49 +100,21 @@ export function DashboardClient() {
           </div>
         </motion.div>
 
-        {/* Quick Stats */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8"
-        >
-          <Card className="ceo-card">
-            <CardContent className="p-6">
-              <div className="flex items-center">
-                <FileText className="w-8 h-8 text-thompson-blue" />
-                <div className="ml-4">
-                  <div className="text-2xl font-bold text-thompson-navy">0</div>
-                  <div className="text-sm text-gray-600">Files Analyzed</div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="ceo-card">
-            <CardContent className="p-6">
-              <div className="flex items-center">
-                <BarChart3 className="w-8 h-8 text-thompson-lime" />
-                <div className="ml-4">
-                  <div className="text-2xl font-bold text-thompson-navy">0</div>
-                  <div className="text-sm text-gray-600">Charts Generated</div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="ceo-card">
-            <CardContent className="p-6">
-              <div className="flex items-center">
-                <TrendingUp className="w-8 h-8 text-thompson-blue" />
-                <div className="ml-4">
-                  <div className="text-2xl font-bold text-thompson-navy">0</div>
-                  <div className="text-sm text-gray-600">Insights Generated</div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
+        {/* Comprehensive Dashboard - Show when analysis is complete */}
+        {analysisData && currentFile && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            className="mb-8"
+          >
+            <ComprehensiveDashboard 
+              analysisData={analysisData}
+              fileData={currentFile}
+              customCharts={customCharts}
+            />
+          </motion.div>
+        )}
 
         {/* Navigation Tabs */}
         <motion.div
@@ -181,6 +159,7 @@ export function DashboardClient() {
             <AnalysisResults 
               fileData={currentFile}
               onAnalysisComplete={handleAnalysisComplete}
+              onCustomChartsUpdate={handleCustomChartsUpdate}
             />
           )}
           
