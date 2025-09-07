@@ -38,9 +38,10 @@ const EnhancedCharts = dynamic(() => import('./enhanced-charts'), {
 interface AnalysisResultsProps {
   fileData: any
   onAnalysisComplete?: (data: any) => void
+  onCustomChartsUpdate?: (charts: any[]) => void
 }
 
-export function AnalysisResults({ fileData, onAnalysisComplete }: AnalysisResultsProps) {
+export function AnalysisResults({ fileData, onAnalysisComplete, onCustomChartsUpdate }: AnalysisResultsProps) {
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [analysisData, setAnalysisData] = useState<any>(null)
   const [error, setError] = useState<string | null>(null)
@@ -133,7 +134,9 @@ export function AnalysisResults({ fileData, onAnalysisComplete }: AnalysisResult
   }
 
   const handleCreateCustomChart = (chartConfig: any) => {
-    setCustomCharts(prev => [...prev, chartConfig])
+    const updatedCharts = [...customCharts, chartConfig]
+    setCustomCharts(updatedCharts)
+    onCustomChartsUpdate?.(updatedCharts)
     toast({
       title: 'Custom Chart Created',
       description: `Created "${chartConfig.title}" chart successfully.`,
