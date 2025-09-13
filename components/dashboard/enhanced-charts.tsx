@@ -7,6 +7,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, LineChart, Line, PieChart, Pie, Cell } from 'recharts'
 import { Expand, Download, TrendingUp } from 'lucide-react'
 import { CHART_COLORS, formatNumber, friendlyLabel, generateChartTitle } from '@/lib/chart-utils'
+import { ChartExplanation } from './ChartExplanation'
+import { ProjectionsButton } from './ProjectionsButton'
+import { explainTimeSeries, explainCategoryBar, explainScatter } from '@/lib/chart-explanations'
 
 interface ChartData {
   id: string
@@ -24,6 +27,41 @@ interface EnhancedChartsProps {
 
 export default function EnhancedCharts({ charts, mode = 'executive' }: EnhancedChartsProps) {
   const [selectedChart, setSelectedChart] = useState<ChartData | null>(null)
+  
+  console.log('EnhancedCharts received:', { charts, mode })
+
+  // Generate chart explanation
+  const generateExplanation = (chart: ChartData) => {
+    console.log('Generating explanation for chart:', chart)
+    try {
+      if (chart.type === 'line' && chart.xField && chart.yField) {
+        // For line charts, try time series explanation
+        const series = chart.data.map(item => ({
+          t: item[chart.xField!],
+          y: item[chart.yField!]
+        }))
+        return explainTimeSeries(chart.title, series)
+      } else if (chart.type === 'bar' && chart.xField && chart.yField) {
+        // For bar charts, use category explanation
+        const rows = chart.data.map(item => ({
+          category: item[chart.xField!],
+          value: item[chart.yField!]
+        }))
+        return explainCategoryBar(chart.title, rows)
+      }
+      return {
+        title: chart.title,
+        plain: "Chart analysis not available for this chart type.",
+        technical: "Advanced analysis features not implemented for this visualization."
+      }
+    } catch (error) {
+      return {
+        title: chart.title,
+        plain: "Chart shows data relationships and trends.",
+        technical: "Statistical analysis unavailable due to data format."
+      }
+    }
+  }
 
   if (!charts || charts.length === 0) {
     return (
@@ -243,6 +281,19 @@ export default function EnhancedCharts({ charts, mode = 'executive' }: EnhancedC
           <div className="h-[400px]">
             {renderChart(chart)}
           </div>
+          
+          {/* Chart Explanation */}
+          <ChartExplanation mode={mode} summary={generateExplanation(chart)} />
+          
+          {/* Projections Button for time series */}
+          {chart.type === 'line' && chart.xField && chart.yField && (
+            <div className="mt-3">
+              <ProjectionsButton series={chart.data.map(item => ({
+                t: item[chart.xField!],
+                y: item[chart.yField!]
+              }))} />
+            </div>
+          )}
         </div>
       ))}
 
