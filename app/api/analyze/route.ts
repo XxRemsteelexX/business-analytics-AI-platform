@@ -19,45 +19,56 @@ interface DataSummary {
 
 export async function POST(request: NextRequest) {
   try {
-    const { fileId, sheetName, originalName, mimeType } = await request.json()
+    const { fileId, sheetName, originalName, mimeType, selectedData, xColumns, yColumns } = await request.json()
 
-    // Construct file path from fileId (which is the filename)
-    const uploadsDir = join(process.cwd(), 'uploads')
-    const filepath = join(uploadsDir, fileId)
-
-    // Read and parse file based on type
-    const fileBuffer = await readFile(filepath)
     let data: any[] = []
     let extractedText = ''
 
-    if (mimeType.includes('spreadsheet') || fileId.endsWith('.xlsx')) {
-      // Parse Excel file
-      const workbook = XLSX.read(fileBuffer)
-      const selectedSheet = sheetName || workbook.SheetNames[0] // Use provided sheet name or default to first
-      const worksheet = workbook.Sheets[selectedSheet]
-      data = XLSX.utils.sheet_to_json(worksheet)
-    } else if (mimeType.includes('csv')) {
-      // Parse CSV file
-      const csvText = fileBuffer.toString('utf-8')
-      const parsed = papa.parse(csvText, { header: true })
-      data = parsed.data
-    } else if (mimeType.includes('pdf')) {
-      // For PDF files, convert to base64 and send to LLM
-      const base64String = fileBuffer.toString('base64')
-      extractedText = await extractTextFromPDF(base64String)
-    } else if (mimeType.includes('wordprocessingml.document')) {
-      // Parse Word document
-      const result = await mammoth.extractRawText({ buffer: fileBuffer })
-      extractedText = result.value
-    } else if (mimeType.includes('text/plain')) {
-      // Plain text file
-      extractedText = fileBuffer.toString('utf-8')
+    // If selectedData is provided, use it directly (from data selector)
+    if (selectedData && Array.isArray(selectedData)) {
+      data = selectedData
+    } else {
+      // Otherwise, read and parse file normally
+      const uploadsDir = join(process.cwd(), 'uploads')
+      const filepath = join(uploadsDir, fileId)
+      const fileBuffer = await readFile(filepath)
+
+      if (mimeType.includes('spreadsheet') || fileId.endsWith('.xlsx')) {
+        // Parse Excel file
+        const workbook = XLSX.read(fileBuffer)
+        const selectedSheet = sheetName || workbook.SheetNames[0] // Use provided sheet name or default to first
+        const worksheet = workbook.Sheets[selectedSheet]
+        data = XLSX.utils.sheet_to_json(worksheet)
+      } else if (mimeType.includes('csv')) {
+        // Parse CSV file
+        const csvText = fileBuffer.toString('utf-8')
+        const parsed = papa.parse(csvText, { header: true })
+        data = parsed.data
+      } else if (mimeType.includes('pdf')) {
+        // For PDF files, convert to base64 and send to LLM
+        const base64String = fileBuffer.toString('base64')
+        extractedText = await extractTextFromPDF(base64String)
+      } else if (mimeType.includes('wordprocessingml.document')) {
+        // Parse Word document
+        const result = await mammoth.extractRawText({ buffer: fileBuffer })
+        extractedText = result.value
+      } else if (mimeType.includes('text/plain')) {
+        // Plain text file
+        extractedText = fileBuffer.toString('utf-8')
+      }
     }
 
     let analysisResult
     if (data.length > 0) {
       // Structured data analysis
       analysisResult = await analyzeStructuredData(data, originalName || 'uploaded file')
+      
+      // Add metadata about selected X/Y columns if available
+      if (xColumns && Array.isArray(xColumns)) {
+        analysisResult.xColumns = xColumns
+        analysisResult.yColumns = yColumns
+        analysisResult.selectedSheet = sheetName
+      }
     } else {
       // Text-based analysis
       analysisResult = await analyzeTextData(extractedText, originalName || 'uploaded file')
@@ -139,13 +150,14 @@ Format your response as JSON:
 Respond with raw JSON only.`
 
   try {
-    const response = await fetch('${process.env.AZURE_OPENAI_ENDPOINT}/openai/deployments/${process.env.AZURE_DEPLOYMENT_NAME}/chat/completions?api-version=${process.env.AZURE_OPENAI_VERSION}', {
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'api-key': process.env.AZURE_OPENAI_API_KEY!
+        'Authorization': `Bearer ${process.env.OPENAI_API_KEY || 'demo'}`
       },
       body: JSON.stringify({
+        model: 'gpt-3.5-turbo',
         messages: [{ role: 'user', content: prompt }],
         max_tokens: 1000
       })
@@ -199,13 +211,14 @@ Format your response as JSON:
 Respond with raw JSON only.`
 
   try {
-    const response = await fetch('${process.env.AZURE_OPENAI_ENDPOINT}/openai/deployments/${process.env.AZURE_DEPLOYMENT_NAME}/chat/completions?api-version=${process.env.AZURE_OPENAI_VERSION}', {
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'api-key': process.env.AZURE_OPENAI_API_KEY!
+        'Authorization': `Bearer ${process.env.OPENAI_API_KEY || 'demo'}`
       },
       body: JSON.stringify({
+        model: 'gpt-3.5-turbo',
         messages: [{ role: 'user', content: prompt }],
         max_tokens: 1000
       })
@@ -272,82 +285,287 @@ function generateChartsFromData(data: any[], summary: DataSummary, recommendatio
   const charts: any[] = []
 
   try {
-    // Chart 1: Bar chart of first categorical vs first numeric
+    // Advanced business pattern detection
+    const dateColumns = summary.columns.filter(col => {
+      const lower = col.toLowerCase()
+      return lower.includes('date') || lower.includes('time') || 
+             lower.includes('month') || lower.includes('year') || 
+             lower.includes('period') || lower.includes('quarter')
+    })
+    
+    const revenueColumns = summary.numericColumns.filter(col => {
+      const lower = col.toLowerCase()
+      return lower.includes('revenue') || lower.includes('sales') || 
+             lower.includes('income') || lower.includes('profit') ||
+             lower.includes('amount') || lower.includes('total') ||
+             lower.includes('price') || lower.includes('cost') ||
+             lower.includes('value') || lower.includes('dollar')
+    })
+    
+    const performanceColumns = summary.numericColumns.filter(col => {
+      const lower = col.toLowerCase()
+      return lower.includes('performance') || lower.includes('efficiency') ||
+             lower.includes('productivity') || lower.includes('utilization') ||
+             lower.includes('margin') || lower.includes('rate') ||
+             lower.includes('percent') || lower.includes('ratio')
+    })
+
+    const locationColumns = summary.categoricalColumns.filter(col => {
+      const lower = col.toLowerCase()
+      return lower.includes('region') || lower.includes('location') ||
+             lower.includes('city') || lower.includes('state') ||
+             lower.includes('country') || lower.includes('territory') ||
+             lower.includes('market') || lower.includes('area')
+    })
+
+    const customerColumns = summary.categoricalColumns.filter(col => {
+      const lower = col.toLowerCase()
+      return lower.includes('customer') || lower.includes('client') ||
+             lower.includes('account') || lower.includes('segment') ||
+             lower.includes('category') || lower.includes('type') ||
+             lower.includes('tier') || lower.includes('group')
+    })
+
+    // Priority 1: Revenue Trends (Executive favorite)
+    if (dateColumns.length > 0 && revenueColumns.length > 0) {
+      const dateCol = dateColumns[0]
+      const revenueCol = revenueColumns[0]
+      
+      // Aggregate by date and clean data
+      const dateAggregation: {[key: string]: number} = {}
+      data.forEach(row => {
+        if (row[dateCol] && row[revenueCol] != null) {
+          const dateStr = String(row[dateCol]).substring(0, 10) // Clean date format
+          const value = Number(row[revenueCol]) || 0
+          dateAggregation[dateStr] = (dateAggregation[dateStr] || 0) + value
+        }
+      })
+
+      const timeData = Object.entries(dateAggregation)
+        .map(([date, value]) => ({
+          date: date,
+          [revenueCol]: Math.round(value * 100) / 100,
+          name: date,
+          value: Math.round(value * 100) / 100
+        }))
+        .sort((a, b) => a.date.localeCompare(b.date))
+        .slice(0, 30)
+
+      if (timeData.length > 2) {
+        charts.push({
+          id: 'revenue_trend',
+          title: `${revenueCol.charAt(0).toUpperCase() + revenueCol.slice(1)} Performance Trend`,
+          type: 'line',
+          xField: 'date',
+          yField: revenueCol,
+          data: timeData
+        })
+      }
+    }
+
+    // Priority 2: Geographic Performance (if location data exists)
+    if (locationColumns.length > 0 && revenueColumns.length > 0) {
+      const locationCol = locationColumns[0]
+      const revenueCol = revenueColumns[0]
+      
+      const locationAggregation: {[key: string]: number} = {}
+      data.forEach(row => {
+        if (row[locationCol] && row[revenueCol] != null) {
+          const location = String(row[locationCol]).trim()
+          const value = Number(row[revenueCol]) || 0
+          locationAggregation[location] = (locationAggregation[location] || 0) + value
+        }
+      })
+
+      const locationData = Object.entries(locationAggregation)
+        .sort(([,a], [,b]) => (b as number) - (a as number))
+        .slice(0, 12)
+        .map(([location, value]) => ({
+          [locationCol]: location,
+          [revenueCol]: Math.round(value * 100) / 100,
+          name: location,
+          value: Math.round(value * 100) / 100
+        }))
+
+      if (locationData.length > 1) {
+        charts.push({
+          id: 'geographic_performance',
+          title: `${revenueCol.charAt(0).toUpperCase() + revenueCol.slice(1)} by ${locationCol}`,
+          type: 'bar',
+          xField: locationCol,
+          yField: revenueCol,
+          data: locationData
+        })
+      }
+    }
+
+    // Priority 3: Customer Segment Analysis
+    if (customerColumns.length > 0 && revenueColumns.length > 0) {
+      const customerCol = customerColumns[0]
+      const revenueCol = revenueColumns[0]
+      
+      const customerAggregation: {[key: string]: number} = {}
+      data.forEach(row => {
+        if (row[customerCol] && row[revenueCol] != null) {
+          const customer = String(row[customerCol]).trim()
+          const value = Number(row[revenueCol]) || 0
+          customerAggregation[customer] = (customerAggregation[customer] || 0) + value
+        }
+      })
+
+      const customerData = Object.entries(customerAggregation)
+        .sort(([,a], [,b]) => (b as number) - (a as number))
+        .slice(0, 8)
+        .map(([customer, value]) => ({
+          [customerCol]: customer,
+          [revenueCol]: Math.round(value * 100) / 100,
+          name: customer,
+          value: Math.round(value * 100) / 100
+        }))
+
+      if (customerData.length > 1) {
+        charts.push({
+          id: 'customer_analysis',
+          title: `Top Performing ${customerCol}s`,
+          type: 'pie',
+          xField: customerCol,
+          yField: revenueCol,
+          data: customerData
+        })
+      }
+    }
+
+    // Priority 4: Performance Metrics Dashboard
+    if (performanceColumns.length > 0) {
+      const perfCol = performanceColumns[0]
+      const categoryCol = summary.categoricalColumns[0]
+      
+      if (categoryCol) {
+        const perfAggregation: {[key: string]: {sum: number, count: number}} = {}
+        data.forEach(row => {
+          if (row[categoryCol] && row[perfCol] != null) {
+            const category = String(row[categoryCol]).trim()
+            const value = Number(row[perfCol]) || 0
+            if (!perfAggregation[category]) perfAggregation[category] = {sum: 0, count: 0}
+            perfAggregation[category].sum += value
+            perfAggregation[category].count += 1
+          }
+        })
+
+        const perfData = Object.entries(perfAggregation)
+          .map(([category, {sum, count}]) => ({
+            [categoryCol]: category,
+            [perfCol]: Math.round((sum / count) * 100) / 100,
+            name: category,
+            value: Math.round((sum / count) * 100) / 100
+          }))
+          .sort((a, b) => b[perfCol] - a[perfCol])
+          .slice(0, 10)
+
+        if (perfData.length > 1) {
+          charts.push({
+            id: 'performance_metrics',
+            title: `Average ${perfCol} by ${categoryCol}`,
+            type: 'bar',
+            xField: categoryCol,
+            yField: perfCol,
+            data: perfData
+          })
+        }
+      }
+    }
+
+    // Fallback: Generate at least one meaningful chart
+    if (charts.length === 0) {
+      // Try any categorical + numeric combination
+      if (summary.categoricalColumns.length > 0 && summary.numericColumns.length > 0) {
+        const catCol = summary.categoricalColumns[0]
+        const numCol = summary.numericColumns[0]
+        
+        const aggregation: {[key: string]: number} = {}
+        data.forEach(row => {
+          if (row[catCol] && row[numCol] != null) {
+            const key = String(row[catCol]).trim()
+            const value = Number(row[numCol]) || 0
+            aggregation[key] = (aggregation[key] || 0) + value
+          }
+        })
+
+        const fallbackData = Object.entries(aggregation)
+          .sort(([,a], [,b]) => (b as number) - (a as number))
+          .slice(0, 10)
+          .map(([key, value]) => ({
+            [catCol]: key,
+            [numCol]: Math.round(value * 100) / 100,
+            name: key,
+            value: Math.round(value * 100) / 100
+          }))
+
+        if (fallbackData.length > 0) {
+          charts.push({
+            id: 'business_overview',
+            title: `${numCol} Analysis by ${catCol}`,
+            type: 'bar',
+            xField: catCol,
+            yField: numCol,
+            data: fallbackData
+          })
+        }
+      }
+    }
+
+  } catch (error) {
+    console.error('Business chart generation error:', error)
+    
+    // Emergency fallback - create one meaningful chart
     if (summary.categoricalColumns.length > 0 && summary.numericColumns.length > 0) {
       const catCol = summary.categoricalColumns[0]
       const numCol = summary.numericColumns[0]
       
-      const aggregated = data.reduce((acc: any, row) => {
-        const key = row[catCol]
-        if (!acc[key]) acc[key] = 0
-        acc[key] += Number(row[numCol]) || 0
-        return acc
-      }, {})
+      // Simple aggregation of actual data
+      const emergencyAggregation: {[key: string]: number} = {}
+      data.slice(0, 50).forEach(row => {
+        if (row[catCol] && row[numCol] != null) {
+          const key = String(row[catCol]).trim()
+          const value = Number(row[numCol]) || 0
+          emergencyAggregation[key] = (emergencyAggregation[key] || 0) + value
+        }
+      })
 
+      const fallbackData = Object.entries(emergencyAggregation)
+        .sort(([,a], [,b]) => (b as number) - (a as number))
+        .slice(0, 8)
+        .map(([key, value]) => ({
+          [catCol]: key,
+          [numCol]: Math.round(value * 100) / 100,
+          name: key,
+          value: Math.round(value * 100) / 100
+        }))
+      
       charts.push({
-        id: 'chart1',
-        title: `${numCol} by ${catCol}`,
+        id: 'fallback',
+        title: `${numCol} Analysis`,
         type: 'bar',
         xField: catCol,
         yField: numCol,
-        data: Object.entries(aggregated).map(([key, value]) => ({ 
-          [catCol]: key, 
-          [numCol]: value,
-          name: key, 
-          value: value 
-        }))
+        data: fallbackData
       })
     }
-
-    // Chart 2: Line chart for time series or trends
-    if (summary.numericColumns.length > 1) {
-      const numCols = summary.numericColumns.slice(0, 2)
-      charts.push({
-        id: 'chart2',
-        title: `Trend Analysis: ${numCols.join(' vs ')}`,
-        type: 'line',
-        xField: 'index',
-        yField: numCols[0],
-        data: data.slice(0, 20).map((row, index) => ({
-          index: index + 1,
-          ...numCols.reduce((acc, col) => ({
-            ...acc,
-            [col]: Number(row[col]) || 0
-          }), {})
-        }))
-      })
-    }
-
-    // Chart 3: Pie chart for categorical distribution
-    if (summary.categoricalColumns.length > 0) {
-      const catCol = summary.categoricalColumns[0]
-      const distribution = data.reduce((acc: any, row) => {
-        const key = row[catCol]
-        acc[key] = (acc[key] || 0) + 1
-        return acc
-      }, {})
-
-      charts.push({
-        id: 'chart3',
-        title: `Distribution of ${catCol}`,
-        type: 'pie',
-        xField: catCol,
-        yField: 'count',
-        data: Object.entries(distribution)
-          .slice(0, 8)
-          .map(([key, value]) => ({ 
-            [catCol]: key, 
-            count: value,
-            name: key, 
-            value: value 
-          }))
-      })
-    }
-  } catch (error) {
-    console.error('Chart generation error:', error)
   }
 
-  return charts
+  return charts.length > 0 ? charts : [{
+    id: 'empty',
+    title: 'Data Overview',
+    type: 'bar',
+    xField: 'category',
+    yField: 'value',
+    data: [
+      { category: 'Rows', value: summary.rowCount },
+      { category: 'Columns', value: summary.columnCount },
+      { category: 'Numeric Fields', value: summary.numericColumns.length },
+      { category: 'Text Fields', value: summary.categoricalColumns.length }
+    ]
+  }]
 }
 
 function generateBasicCharts(data: any[], summary: DataSummary): any[] {

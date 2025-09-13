@@ -59,11 +59,11 @@ Current user question: ${message}`
       { role: 'user', content: message }
     ]
 
-    const response = await fetch(`${process.env.AZURE_OPENAI_ENDPOINT}/openai/deployments/${process.env.AZURE_DEPLOYMENT_NAME}/chat/completions?api-version=${process.env.AZURE_OPENAI_VERSION}`, {
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'api-key': process.env.AZURE_OPENAI_API_KEY!
+        'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`
       },
       body: JSON.stringify({
         messages: messages,

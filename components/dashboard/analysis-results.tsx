@@ -22,6 +22,7 @@ import { ExecutiveKPIs } from './executive-kpis'
 import { ViewModeToggle } from './view-mode-toggle'
 import { ColumnEditor } from './column-editor'
 import { ExecutiveInsights } from './executive-insights'
+import { DataSelector } from './DataSelector'
 import { calculateKPIs, generateInsights } from '@/lib/chart-utils'
 import { performExecutiveAnalysis } from '@/lib/advanced-analysis'
 
@@ -48,13 +49,16 @@ export function AnalysisResults({ fileData, onAnalysisComplete, onCustomChartsUp
   const [viewMode, setViewMode] = useState<'executive' | 'analyst'>('executive')
   const [columnMappings, setColumnMappings] = useState<Record<string, string>>({})
   const [customCharts, setCustomCharts] = useState<any[]>([])
+  const [showDataSelector, setShowDataSelector] = useState(true)
+  const [selectedData, setSelectedData] = useState<any>(null)
   const { toast } = useToast()
 
-  useEffect(() => {
-    if (fileData && !analysisData) {
-      analyzeFile()
-    }
-  }, [fileData])
+  // Auto-analysis is now disabled - user must select data first
+  // useEffect(() => {
+  //   if (fileData && !analysisData) {
+  //     analyzeFile()
+  //   }
+  // }, [fileData])
 
   const analyzeFile = async () => {
     if (!fileData) return
@@ -143,6 +147,90 @@ export function AnalysisResults({ fileData, onAnalysisComplete, onCustomChartsUp
     })
   }
 
+  const handleDataSelected = async (selection: any) => {
+    setSelectedData(selection)
+    setShowDataSelector(false)
+    
+    // Create a modified fileData with selected data
+    const modifiedFileData = {
+      ...fileData,
+      parsedData: { [selection.sheetName]: selection.data },
+      selectedSheet: selection.sheetName,
+      selectedColumns: selection.selectedColumns
+    }
+    
+    // Now analyze with the selected data
+    setIsAnalyzing(true)
+    setError(null)
+
+    try {
+      const response = await fetch('/api/analyze', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          fileId: fileData.id || fileData.filename,
+          sheetName: selection.sheetName,
+          originalName: fileData.originalName,
+          mimeType: fileData.mimeType || 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+          selectedData: selection.data,
+          xColumns: selection.xColumns,
+          yColumns: selection.yColumns
+        }),
+      })
+
+      if (response.ok) {
+        const result = await response.json()
+        
+        // Enhance analysis with CEO-friendly KPIs and advanced insights
+        if (result.data && result.columns) {
+          result.kpis = calculateKPIs(result.data, result.columns)
+          result.enhancedInsights = generateInsights(result.data, result.columns)
+          
+          // Perform advanced executive analysis
+          const executiveAnalysis = performExecutiveAnalysis(result.data, result.columns)
+          result.executiveAnalysis = executiveAnalysis
+          
+          // Override summary with executive analysis if available
+          if (executiveAnalysis.summary) {
+            result.enhancedInsights = executiveAnalysis.summary
+          }
+        }
+        
+        setAnalysisData(result)
+        onAnalysisComplete?.(result)
+        
+        toast({
+          title: 'Analysis Complete',
+          description: `Successfully analyzed X: ${selection.xColumns[0]} and Y: ${selection.yColumns[0]} from ${selection.sheetName}.`,
+        })
+      } else {
+        throw new Error('Analysis failed')
+      }
+    } catch (err: any) {
+      setError(err.message || 'Failed to analyze the selected data')
+      toast({
+        title: 'Analysis Failed',
+        description: 'There was an error analyzing your data.',
+        variant: 'destructive'
+      })
+    } finally {
+      setIsAnalyzing(false)
+    }
+  }
+
+  const handleStartOver = () => {
+    setAnalysisData(null)
+    setShowDataSelector(true)
+    setSelectedData(null)
+    setError(null)
+    toast({
+      title: 'Reset Complete',
+      description: 'You can now select different data to analyze.',
+    })
+  }
+
   if (!fileData) {
     return (
       <div className="text-center py-12">
@@ -194,40 +282,66 @@ export function AnalysisResults({ fileData, onAnalysisComplete, onCustomChartsUp
 
   return (
     <div className="space-y-8">
-      {/* File Info Header */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="flex items-center justify-between p-4 bg-green-50 rounded-lg border border-green-200"
-      >
-        <div className="flex items-center space-x-3">
-          <CheckCircle className="w-6 h-6 text-green-600" />
-          <div>
-            <h3 className="font-semibold text-green-800">
-              Analysis Complete: {fileData.originalName}
-            </h3>
-            <p className="text-sm text-green-600">
-              File size: {(fileData.size / 1024).toFixed(1)} KB • Uploaded: {new Date(fileData.createdAt).toLocaleString()}
-            </p>
+      {/* Show Data Selector if no analysis done yet */}
+      {showDataSelector && !analysisData && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-white rounded-lg border border-gray-200 p-6"
+        >
+          <DataSelector 
+            fileData={fileData}
+            onDataSelected={handleDataSelected}
+          />
+        </motion.div>
+      )}
+
+      {/* File Info Header - only show when analysis is done */}
+      {analysisData && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="flex items-center justify-between p-4 bg-green-50 rounded-lg border border-green-200"
+        >
+          <div className="flex items-center space-x-3">
+            <CheckCircle className="w-6 h-6 text-green-600" />
+            <div>
+              <h3 className="font-semibold text-green-800">
+                Analysis Complete: {fileData.originalName}
+              </h3>
+              <p className="text-sm text-green-600">
+                {selectedData ? `Analyzed X: ${selectedData.xColumns.join(', ')} • Y: ${selectedData.yColumns.join(', ')} from ${selectedData.sheetName}` : 
+                `File size: ${(fileData.size / 1024).toFixed(1)} KB • Uploaded: ${new Date(fileData.createdAt).toLocaleString()}`}
+              </p>
+            </div>
           </div>
-        </div>
-        <div className="flex gap-2">
-          {analysisData?.columns && (
-            <ColumnEditor 
-              columns={analysisData.columns} 
-              onMappingChange={handleColumnMappingChange}
-            />
-          )}
-          <Button size="sm" variant="outline">
-            <Download className="w-4 h-4 mr-2" />
-            Export Report
-          </Button>
-          <Button size="sm" variant="outline">
-            <Eye className="w-4 h-4 mr-2" />
-            Present Mode
-          </Button>
-        </div>
-      </motion.div>
+          <div className="flex gap-2">
+            <Button 
+              size="sm" 
+              variant="outline" 
+              onClick={handleStartOver}
+              className="bg-orange-50 border-orange-300 text-orange-700 hover:bg-orange-100"
+            >
+              <Settings className="w-4 h-4 mr-2" />
+              Start Over
+            </Button>
+            {analysisData?.columns && (
+              <ColumnEditor 
+                columns={analysisData.columns} 
+                onMappingChange={handleColumnMappingChange}
+              />
+            )}
+            <Button size="sm" variant="outline">
+              <Download className="w-4 h-4 mr-2" />
+              Export Report
+            </Button>
+            <Button size="sm" variant="outline">
+              <Eye className="w-4 h-4 mr-2" />
+              Present Mode
+            </Button>
+          </div>
+        </motion.div>
+      )}
 
       {/* View Mode Toggle */}
       {analysisData && (
