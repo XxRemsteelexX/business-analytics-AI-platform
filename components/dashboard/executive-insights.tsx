@@ -120,46 +120,6 @@ export function ExecutiveInsights({
         </motion.div>
       )}
 
-      {/* Anomalies */}
-      {anomalies.length > 0 && (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-          className="ceo-card p-6"
-        >
-          <div className="flex items-center mb-4">
-            <AlertTriangle className="w-6 h-6 mr-3 text-orange-600" />
-            <h3 className="text-h2">Data Anomalies</h3>
-          </div>
-          <div className="space-y-3">
-            {anomalies.map((anomaly, index) => (
-              <div key={index} className={`flex items-start gap-3 p-3 rounded-lg ${
-                anomaly.severity === 'high' ? 'bg-red-50 border-l-4 border-red-400' :
-                anomaly.severity === 'medium' ? 'bg-orange-50 border-l-4 border-orange-400' :
-                'bg-yellow-50 border-l-4 border-yellow-400'
-              }`}>
-                <AlertCircle className={`w-5 h-5 mt-0.5 ${
-                  anomaly.severity === 'high' ? 'text-red-600' :
-                  anomaly.severity === 'medium' ? 'text-orange-600' :
-                  'text-yellow-600'
-                }`} />
-                <div>
-                  <p className="font-medium">{anomaly.field}: {anomaly.value}</p>
-                  <p className="text-sm text-gray-600">{anomaly.description}</p>
-                  <span className={`text-xs px-2 py-1 rounded mt-2 inline-block ${
-                    anomaly.severity === 'high' ? 'bg-red-100 text-red-800' :
-                    anomaly.severity === 'medium' ? 'bg-orange-100 text-orange-800' :
-                    'bg-yellow-100 text-yellow-800'
-                  }`}>
-                    {anomaly.severity.toUpperCase()} PRIORITY
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </motion.div>
-      )}
     </div>
   )
 }
