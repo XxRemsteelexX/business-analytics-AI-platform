@@ -65,9 +65,9 @@ export async function POST(request: NextRequest) {
       
       // Add metadata about selected X/Y columns if available
       if (xColumns && Array.isArray(xColumns)) {
-        analysisResult.xColumns = xColumns
-        analysisResult.yColumns = yColumns
-        analysisResult.selectedSheet = sheetName
+        (analysisResult as any).xColumns = xColumns;
+        (analysisResult as any).yColumns = yColumns;
+        (analysisResult as any).selectedSheet = sheetName
       }
     } else {
       // Text-based analysis
