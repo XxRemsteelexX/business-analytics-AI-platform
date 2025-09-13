@@ -81,12 +81,51 @@ export function ExecutiveInsights({
         </motion.div>
       )}
 
+      {/* Executive Recommendations */}
+      {recommendations.length > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className="ceo-card p-6"
+        >
+          <div className="flex items-center mb-4">
+            <CheckCircle className="w-6 h-6 mr-3 text-thompson-lime" />
+            <h3 className="text-h2">Executive Recommendations</h3>
+          </div>
+          <div className="space-y-4">
+            {recommendations.map((rec, index) => (
+              <div key={index} className="border-l-4 border-thompson-lime pl-4">
+                <div className="flex items-start justify-between mb-2">
+                  <h4 className="font-semibold text-thompson-navy">{rec.title}</h4>
+                  <span className={`text-xs px-2 py-1 rounded ${
+                    rec.priority === 'high' ? 'bg-red-100 text-red-800' :
+                    rec.priority === 'medium' ? 'bg-orange-100 text-orange-800' :
+                    'bg-blue-100 text-blue-800'
+                  }`}>
+                    {rec.priority.toUpperCase()}
+                  </span>
+                </div>
+                <p className="text-sm text-gray-700 mb-2">{rec.description}</p>
+                <div className="bg-slate-50 p-3 rounded">
+                  <div className="flex items-center mb-1">
+                    <Info className="w-4 h-4 mr-2 text-thompson-blue" />
+                    <span className="text-sm font-medium">Recommended Action:</span>
+                  </div>
+                  <p className="text-sm text-gray-700 ml-6">{rec.action}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </motion.div>
+      )}
+
       {/* Anomalies */}
       {anomalies.length > 0 && (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
+          transition={{ delay: 0.3 }}
           className="ceo-card p-6"
         >
           <div className="flex items-center mb-4">
@@ -115,45 +154,6 @@ export function ExecutiveInsights({
                   }`}>
                     {anomaly.severity.toUpperCase()} PRIORITY
                   </span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </motion.div>
-      )}
-
-      {/* Executive Recommendations */}
-      {recommendations.length > 0 && (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-          className="ceo-card p-6"
-        >
-          <div className="flex items-center mb-4">
-            <CheckCircle className="w-6 h-6 mr-3 text-thompson-lime" />
-            <h3 className="text-h2">Executive Recommendations</h3>
-          </div>
-          <div className="space-y-4">
-            {recommendations.map((rec, index) => (
-              <div key={index} className="border-l-4 border-thompson-lime pl-4">
-                <div className="flex items-start justify-between mb-2">
-                  <h4 className="font-semibold text-thompson-navy">{rec.title}</h4>
-                  <span className={`text-xs px-2 py-1 rounded ${
-                    rec.priority === 'high' ? 'bg-red-100 text-red-800' :
-                    rec.priority === 'medium' ? 'bg-orange-100 text-orange-800' :
-                    'bg-blue-100 text-blue-800'
-                  }`}>
-                    {rec.priority.toUpperCase()}
-                  </span>
-                </div>
-                <p className="text-sm text-gray-700 mb-2">{rec.description}</p>
-                <div className="bg-slate-50 p-3 rounded">
-                  <div className="flex items-center mb-1">
-                    <Info className="w-4 h-4 mr-2 text-thompson-blue" />
-                    <span className="text-sm font-medium">Recommended Action:</span>
-                  </div>
-                  <p className="text-sm text-gray-700 ml-6">{rec.action}</p>
                 </div>
               </div>
             ))}
