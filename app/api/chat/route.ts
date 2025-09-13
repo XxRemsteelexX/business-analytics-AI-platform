@@ -52,7 +52,7 @@ Current user question: ${message}`
 
     const messages = [
       { role: 'system', content: systemPrompt },
-      ...chatHistory.slice(-5).map((msg: any) => ({
+      ...(chatHistory || []).slice(-5).map((msg: any) => ({
         role: msg.role,
         content: msg.content
       })),
