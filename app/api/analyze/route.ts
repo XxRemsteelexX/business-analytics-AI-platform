@@ -285,7 +285,7 @@ function generateChartsFromData(data: any[], summary: DataSummary, recommendatio
   const charts: any[] = []
 
   try {
-    // Advanced business pattern detection
+    // Comprehensive data analysis - generate ALL relevant charts
     const dateColumns = summary.columns.filter(col => {
       const lower = col.toLowerCase()
       return lower.includes('date') || lower.includes('time') || 
@@ -326,225 +326,199 @@ function generateChartsFromData(data: any[], summary: DataSummary, recommendatio
              lower.includes('tier') || lower.includes('group')
     })
 
-    // Priority 1: Revenue Trends (Executive favorite)
-    if (dateColumns.length > 0 && revenueColumns.length > 0) {
-      const dateCol = dateColumns[0]
-      const revenueCol = revenueColumns[0]
-      
-      // Aggregate by date and clean data
-      const dateAggregation: {[key: string]: number} = {}
-      data.forEach(row => {
-        if (row[dateCol] && row[revenueCol] != null) {
-          const dateStr = String(row[dateCol]).substring(0, 10) // Clean date format
-          const value = Number(row[revenueCol]) || 0
-          dateAggregation[dateStr] = (dateAggregation[dateStr] || 0) + value
-        }
-      })
-
-      const timeData = Object.entries(dateAggregation)
-        .map(([date, value]) => ({
-          date: date,
-          [revenueCol]: Math.round(value * 100) / 100,
-          name: date,
-          value: Math.round(value * 100) / 100
-        }))
-        .sort((a, b) => a.date.localeCompare(b.date))
-        .slice(0, 30)
-
-      if (timeData.length > 2) {
-        charts.push({
-          id: 'revenue_trend',
-          title: `${revenueCol.charAt(0).toUpperCase() + revenueCol.slice(1)} Performance Trend`,
-          type: 'line',
-          xField: 'date',
-          yField: revenueCol,
-          data: timeData
-        })
-      }
-    }
-
-    // Priority 2: Geographic Performance (if location data exists)
-    if (locationColumns.length > 0 && revenueColumns.length > 0) {
-      const locationCol = locationColumns[0]
-      const revenueCol = revenueColumns[0]
-      
-      const locationAggregation: {[key: string]: number} = {}
-      data.forEach(row => {
-        if (row[locationCol] && row[revenueCol] != null) {
-          const location = String(row[locationCol]).trim()
-          const value = Number(row[revenueCol]) || 0
-          locationAggregation[location] = (locationAggregation[location] || 0) + value
-        }
-      })
-
-      const locationData = Object.entries(locationAggregation)
-        .sort(([,a], [,b]) => (b as number) - (a as number))
-        .slice(0, 12)
-        .map(([location, value]) => ({
-          [locationCol]: location,
-          [revenueCol]: Math.round(value * 100) / 100,
-          name: location,
-          value: Math.round(value * 100) / 100
-        }))
-
-      if (locationData.length > 1) {
-        charts.push({
-          id: 'geographic_performance',
-          title: `${revenueCol.charAt(0).toUpperCase() + revenueCol.slice(1)} by ${locationCol}`,
-          type: 'bar',
-          xField: locationCol,
-          yField: revenueCol,
-          data: locationData
-        })
-      }
-    }
-
-    // Priority 3: Customer Segment Analysis
-    if (customerColumns.length > 0 && revenueColumns.length > 0) {
-      const customerCol = customerColumns[0]
-      const revenueCol = revenueColumns[0]
-      
-      const customerAggregation: {[key: string]: number} = {}
-      data.forEach(row => {
-        if (row[customerCol] && row[revenueCol] != null) {
-          const customer = String(row[customerCol]).trim()
-          const value = Number(row[revenueCol]) || 0
-          customerAggregation[customer] = (customerAggregation[customer] || 0) + value
-        }
-      })
-
-      const customerData = Object.entries(customerAggregation)
-        .sort(([,a], [,b]) => (b as number) - (a as number))
-        .slice(0, 8)
-        .map(([customer, value]) => ({
-          [customerCol]: customer,
-          [revenueCol]: Math.round(value * 100) / 100,
-          name: customer,
-          value: Math.round(value * 100) / 100
-        }))
-
-      if (customerData.length > 1) {
-        charts.push({
-          id: 'customer_analysis',
-          title: `Top Performing ${customerCol}s`,
-          type: 'pie',
-          xField: customerCol,
-          yField: revenueCol,
-          data: customerData
-        })
-      }
-    }
-
-    // Priority 4: Performance Metrics Dashboard
-    if (performanceColumns.length > 0) {
-      const perfCol = performanceColumns[0]
-      const categoryCol = summary.categoricalColumns[0]
-      
-      if (categoryCol) {
-        const perfAggregation: {[key: string]: {sum: number, count: number}} = {}
-        data.forEach(row => {
-          if (row[categoryCol] && row[perfCol] != null) {
-            const category = String(row[categoryCol]).trim()
-            const value = Number(row[perfCol]) || 0
-            if (!perfAggregation[category]) perfAggregation[category] = {sum: 0, count: 0}
-            perfAggregation[category].sum += value
-            perfAggregation[category].count += 1
-          }
-        })
-
-        const perfData = Object.entries(perfAggregation)
-          .map(([category, {sum, count}]) => ({
-            [categoryCol]: category,
-            [perfCol]: Math.round((sum / count) * 100) / 100,
-            name: category,
-            value: Math.round((sum / count) * 100) / 100
-          }))
-          .sort((a, b) => b[perfCol] - a[perfCol])
-          .slice(0, 10)
-
-        if (perfData.length > 1) {
+    // GENERATE COMPREHENSIVE CHART SUITE
+    
+    // 1. Time Series Charts - ALL numeric columns over time
+    dateColumns.forEach(dateCol => {
+      summary.numericColumns.forEach(numCol => {
+        const timeData = generateTimeSeriesData(data, dateCol, numCol)
+        if (timeData.length > 2) {
           charts.push({
-            id: 'performance_metrics',
-            title: `Average ${perfCol} by ${categoryCol}`,
-            type: 'bar',
-            xField: categoryCol,
-            yField: perfCol,
-            data: perfData
+            id: `time_${dateCol}_${numCol}`,
+            title: `${numCol} Trend Over Time`,
+            type: 'line',
+            xField: 'date',
+            yField: numCol,
+            data: timeData
           })
         }
-      }
-    }
+      })
+    })
 
-    // Fallback: Generate at least one meaningful chart
-    if (charts.length === 0) {
-      // Try any categorical + numeric combination
-      if (summary.categoricalColumns.length > 0 && summary.numericColumns.length > 0) {
-        const catCol = summary.categoricalColumns[0]
-        const numCol = summary.numericColumns[0]
-        
-        const aggregation: {[key: string]: number} = {}
-        data.forEach(row => {
-          if (row[catCol] && row[numCol] != null) {
-            const key = String(row[catCol]).trim()
-            const value = Number(row[numCol]) || 0
-            aggregation[key] = (aggregation[key] || 0) + value
-          }
-        })
-
-        const fallbackData = Object.entries(aggregation)
-          .sort(([,a], [,b]) => (b as number) - (a as number))
-          .slice(0, 10)
-          .map(([key, value]) => ({
-            [catCol]: key,
-            [numCol]: Math.round(value * 100) / 100,
-            name: key,
-            value: Math.round(value * 100) / 100
-          }))
-
-        if (fallbackData.length > 0) {
+    // 2. Categorical Analysis - ALL categorical vs numeric combinations
+    summary.categoricalColumns.forEach(catCol => {
+      summary.numericColumns.forEach(numCol => {
+        const catData = generateCategoricalData(data, catCol, numCol)
+        if (catData.length > 1 && catData.length <= 20) {
+          // Bar Chart
           charts.push({
-            id: 'business_overview',
-            title: `${numCol} Analysis by ${catCol}`,
+            id: `bar_${catCol}_${numCol}`,
+            title: `${numCol} by ${catCol}`,
             type: 'bar',
             xField: catCol,
             yField: numCol,
-            data: fallbackData
+            data: catData
+          })
+          
+          // Pie Chart (if reasonable number of categories)
+          if (catData.length <= 8) {
+            charts.push({
+              id: `pie_${catCol}_${numCol}`,
+              title: `${numCol} Distribution by ${catCol}`,
+              type: 'pie',
+              xField: catCol,
+              yField: numCol,
+              data: catData
+            })
+          }
+        }
+      })
+    })
+
+    // 3. Correlation Analysis - Numeric vs Numeric scatter plots
+    for (let i = 0; i < summary.numericColumns.length; i++) {
+      for (let j = i + 1; j < summary.numericColumns.length; j++) {
+        const col1 = summary.numericColumns[i]
+        const col2 = summary.numericColumns[j]
+        const scatterData = generateScatterData(data, col1, col2)
+        
+        if (scatterData.length > 5) {
+          charts.push({
+            id: `scatter_${col1}_${col2}`,
+            title: `${col1} vs ${col2} Correlation`,
+            type: 'scatter',
+            xField: col1,
+            yField: col2,
+            data: scatterData
           })
         }
       }
     }
 
-  } catch (error) {
-    console.error('Business chart generation error:', error)
-    
-    // Emergency fallback - create one meaningful chart
-    if (summary.categoricalColumns.length > 0 && summary.numericColumns.length > 0) {
-      const catCol = summary.categoricalColumns[0]
-      const numCol = summary.numericColumns[0]
-      
-      // Simple aggregation of actual data
-      const emergencyAggregation: {[key: string]: number} = {}
-      data.slice(0, 50).forEach(row => {
-        if (row[catCol] && row[numCol] != null) {
-          const key = String(row[catCol]).trim()
-          const value = Number(row[numCol]) || 0
-          emergencyAggregation[key] = (emergencyAggregation[key] || 0) + value
+    // 4. Top/Bottom Analysis for each numeric column
+    summary.numericColumns.forEach(numCol => {
+      // Find which categorical column has the most impact
+      let bestCatCol = summary.categoricalColumns[0]
+      if (bestCatCol) {
+        const topBottomData = generateTopBottomData(data, bestCatCol, numCol)
+        if (topBottomData.length > 2) {
+          charts.push({
+            id: `topbottom_${bestCatCol}_${numCol}`,
+            title: `Top Performers: ${numCol} by ${bestCatCol}`,
+            type: 'bar',
+            xField: bestCatCol,
+            yField: numCol,
+            data: topBottomData.slice(0, 10) // Top 10
+          })
+        }
+      }
+    })
+
+    // 5. Summary Statistics Charts
+    if (summary.numericColumns.length > 1) {
+      const statsData = summary.numericColumns.map(col => {
+        const values = data.map(row => Number(row[col])).filter(v => !isNaN(v))
+        const avg = values.reduce((a, b) => a + b, 0) / values.length
+        return {
+          metric: col,
+          average: Math.round(avg * 100) / 100,
+          name: col,
+          value: Math.round(avg * 100) / 100
         }
       })
-
-      const fallbackData = Object.entries(emergencyAggregation)
-        .sort(([,a], [,b]) => (b as number) - (a as number))
-        .slice(0, 8)
-        .map(([key, value]) => ({
-          [catCol]: key,
-          [numCol]: Math.round(value * 100) / 100,
-          name: key,
-          value: Math.round(value * 100) / 100
-        }))
       
       charts.push({
-        id: 'fallback',
-        title: `${numCol} Analysis`,
+        id: 'summary_averages',
+        title: 'Average Values Comparison',
+        type: 'bar',
+        xField: 'metric',
+        yField: 'average',
+        data: statsData
+      })
+    }
+
+    return charts
+
+  } catch (error) {
+    console.error('Comprehensive chart generation error:', error)
+    return generateFallbackCharts(data, summary)
+  }
+}
+
+// Helper function to generate time series data
+function generateTimeSeriesData(data: any[], dateCol: string, numCol: string): any[] {
+  const aggregation: {[key: string]: number} = {}
+  data.forEach(row => {
+    if (row[dateCol] && row[numCol] != null) {
+      const dateStr = String(row[dateCol]).substring(0, 10)
+      const value = Number(row[numCol]) || 0
+      aggregation[dateStr] = (aggregation[dateStr] || 0) + value
+    }
+  })
+
+  return Object.entries(aggregation)
+    .map(([date, value]) => ({
+      date: date,
+      [numCol]: Math.round(value * 100) / 100,
+      name: date,
+      value: Math.round(value * 100) / 100
+    }))
+    .sort((a, b) => a.date.localeCompare(b.date))
+    .slice(0, 50)
+}
+
+// Helper function to generate categorical data
+function generateCategoricalData(data: any[], catCol: string, numCol: string): any[] {
+  const aggregation: {[key: string]: number} = {}
+  data.forEach(row => {
+    if (row[catCol] && row[numCol] != null) {
+      const category = String(row[catCol]).trim()
+      const value = Number(row[numCol]) || 0
+      aggregation[category] = (aggregation[category] || 0) + value
+    }
+  })
+
+  return Object.entries(aggregation)
+    .sort(([,a], [,b]) => (b as number) - (a as number))
+    .slice(0, 15)
+    .map(([category, value]) => ({
+      [catCol]: category,
+      [numCol]: Math.round(value * 100) / 100,
+      name: category,
+      value: Math.round(value * 100) / 100
+    }))
+}
+
+// Helper function to generate scatter plot data
+function generateScatterData(data: any[], col1: string, col2: string): any[] {
+  return data
+    .filter(row => row[col1] != null && row[col2] != null)
+    .map(row => ({
+      [col1]: Number(row[col1]) || 0,
+      [col2]: Number(row[col2]) || 0,
+      name: `${row[col1]}, ${row[col2]}`
+    }))
+    .slice(0, 100)
+}
+
+// Helper function to generate top/bottom analysis
+function generateTopBottomData(data: any[], catCol: string, numCol: string): any[] {
+  return generateCategoricalData(data, catCol, numCol)
+}
+
+// Fallback chart generation
+function generateFallbackCharts(data: any[], summary: DataSummary): any[] {
+  const charts: any[] = []
+  
+  if (summary.categoricalColumns.length > 0 && summary.numericColumns.length > 0) {
+    const catCol = summary.categoricalColumns[0]
+    const numCol = summary.numericColumns[0]
+    const fallbackData = generateCategoricalData(data, catCol, numCol)
+    
+    if (fallbackData.length > 0) {
+      charts.push({
+        id: 'fallback_analysis',
+        title: `${numCol} Analysis by ${catCol}`,
         type: 'bar',
         xField: catCol,
         yField: numCol,
