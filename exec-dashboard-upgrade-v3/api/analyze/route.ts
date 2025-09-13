@@ -36,7 +36,7 @@ export async function POST(request: NextRequest) {
     let best = { name: '', score: -1, payload: null as null | any }
     for (const s of candidateSheets) {
       const ws = workbook.Sheets[s]
-      const grid = XLSX.utils.sheet_to_json(ws, { header: 1, blankrows: false, defval: null })
+      const grid = XLSX.utils.sheet_to_json(ws, { header: 1, blankrows: false, defval: null }) as any[][]
       const inferred = inferTableFromGrid(grid)
       const rows = rowsToObjects(inferred.headers, inferred.rows)
       const score = scoreTable(rows)
