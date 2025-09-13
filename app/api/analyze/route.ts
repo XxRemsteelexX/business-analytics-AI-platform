@@ -150,12 +150,25 @@ Format your response as JSON:
 Respond with raw JSON only.`
 
   try {
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    // Use Azure OpenAI if available, otherwise fallback to OpenAI
+    const useAzure = process.env.AZURE_OPENAI_ENDPOINT && process.env.AZURE_OPENAI_API_KEY
+    const apiUrl = useAzure
+      ? `${process.env.AZURE_OPENAI_ENDPOINT}/openai/deployments/gpt-35-turbo/chat/completions?api-version=${process.env.AZURE_OPENAI_VERSION || '2024-02-01'}`
+      : 'https://api.openai.com/v1/chat/completions'
+
+    const headers = useAzure
+      ? {
+          'Content-Type': 'application/json',
+          'api-key': process.env.AZURE_OPENAI_API_KEY!
+        }
+      : {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${process.env.OPENAI_API_KEY || 'demo'}`
+        }
+
+    const response = await fetch(apiUrl, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${process.env.OPENAI_API_KEY || 'demo'}`
-      },
+      headers,
       body: JSON.stringify({
         model: 'gpt-3.5-turbo',
         messages: [{ role: 'user', content: prompt }],
@@ -211,12 +224,25 @@ Format your response as JSON:
 Respond with raw JSON only.`
 
   try {
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    // Use Azure OpenAI if available, otherwise fallback to OpenAI
+    const useAzure = process.env.AZURE_OPENAI_ENDPOINT && process.env.AZURE_OPENAI_API_KEY
+    const apiUrl = useAzure
+      ? `${process.env.AZURE_OPENAI_ENDPOINT}/openai/deployments/gpt-35-turbo/chat/completions?api-version=${process.env.AZURE_OPENAI_VERSION || '2024-02-01'}`
+      : 'https://api.openai.com/v1/chat/completions'
+
+    const headers = useAzure
+      ? {
+          'Content-Type': 'application/json',
+          'api-key': process.env.AZURE_OPENAI_API_KEY!
+        }
+      : {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${process.env.OPENAI_API_KEY || 'demo'}`
+        }
+
+    const response = await fetch(apiUrl, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${process.env.OPENAI_API_KEY || 'demo'}`
-      },
+      headers,
       body: JSON.stringify({
         model: 'gpt-3.5-turbo',
         messages: [{ role: 'user', content: prompt }],
