@@ -20,7 +20,7 @@ export function SmartDataSelector({ rawData, sheetName, onDataStructureIdentifie
   const [aiSuggestion, setAiSuggestion] = useState<string>('')
   const [headerOptions, setHeaderOptions] = useState<number[]>([])
   const [selectedHeaderRow, setSelectedHeaderRow] = useState<number>(-1)
-  const [columnOptions, setColumnOptions] = useState<{index: number, name: string, type: string}[]>([])
+  const [columnOptions, setColumnOptions] = useState<{index: number, name: string, type: string, reason?: string}[]>([])
   const [selectedColumns, setSelectedColumns] = useState<number[]>([])
   const [isLoading, setIsLoading] = useState(false)
 
@@ -120,12 +120,15 @@ Focus on business-relevant columns with data that can be visualized.`,
     
     // Update column options based on selected header
     const headerRow = rawData[rowIndex] || []
-    const updatedColumns = headerRow.map((header, index) => ({
-      index,
-      name: String(header || `Column ${index + 1}`),
-      type: columnOptions.find(col => col.index === index)?.type || 'unknown',
-      reason: columnOptions.find(col => col.index === index)?.reason || 'Available for analysis'
-    }))
+    const updatedColumns = headerRow.map((header, index) => {
+      const existingCol = columnOptions.find(col => col.index === index)
+      return {
+        index,
+        name: String(header || `Column ${index + 1}`),
+        type: existingCol?.type || 'unknown',
+        reason: existingCol?.reason || 'Available for analysis'
+      }
+    })
     
     setColumnOptions(updatedColumns)
     setStep('columns')
