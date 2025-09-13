@@ -37,9 +37,7 @@ export function SmartDataSelector({ rawData, sheetName, onDataStructureIdentifie
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          messages: [{
-            role: 'system',
-            content: `You are a data analyst. Analyze this spreadsheet data and provide suggestions.
+          message: `You are a data analyst. Analyze this spreadsheet data and provide suggestions.
 
 Data preview (first 15 rows):
 ${rawData.slice(0, 15).map((row, i) => `Row ${i+1}: ${row.map(cell => String(cell || '').substring(0, 30)).join(' | ')}`).join('\n')}
@@ -56,15 +54,17 @@ Respond with JSON only:
   ]
 }
 
-Focus on business-relevant columns with data that can be visualized.`
-          }]
+Focus on business-relevant columns with data that can be visualized.`,
+          chatHistory: []
         })
       })
 
       if (response.ok) {
         const data = await response.json()
         try {
-          const analysis = JSON.parse(data.content)
+          // Try to parse the AI response content as JSON
+          const aiResponse = data.result?.content || data.content || ''
+          const analysis = JSON.parse(aiResponse)
           
           setAiSuggestion(analysis.suggestion)
           setHeaderOptions(analysis.headerOptions || [])
@@ -73,7 +73,7 @@ Focus on business-relevant columns with data that can be visualized.`
           
           setStep('header')
         } catch (e) {
-          console.error('AI response parsing error:', e)
+          console.error('AI response parsing error:', e, data)
           fallbackAnalysis()
         }
       } else {
