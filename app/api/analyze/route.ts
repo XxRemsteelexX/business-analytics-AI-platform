@@ -156,7 +156,7 @@ Respond with raw JSON only.`
       ? `${process.env.AZURE_OPENAI_ENDPOINT}/openai/deployments/${process.env.AZURE_DEPLOYMENT_NAME || 'gpt-35-turbo'}/chat/completions?api-version=${process.env.AZURE_OPENAI_VERSION || '2024-02-01'}`
       : 'https://api.openai.com/v1/chat/completions'
 
-    const headers = useAzure
+    const headers: Record<string, string> = useAzure
       ? {
           'Content-Type': 'application/json',
           'api-key': process.env.AZURE_OPENAI_API_KEY!
@@ -230,7 +230,7 @@ Respond with raw JSON only.`
       ? `${process.env.AZURE_OPENAI_ENDPOINT}/openai/deployments/${process.env.AZURE_DEPLOYMENT_NAME || 'gpt-35-turbo'}/chat/completions?api-version=${process.env.AZURE_OPENAI_VERSION || '2024-02-01'}`
       : 'https://api.openai.com/v1/chat/completions'
 
-    const headers = useAzure
+    const headers: Record<string, string> = useAzure
       ? {
           'Content-Type': 'application/json',
           'api-key': process.env.AZURE_OPENAI_API_KEY!
