@@ -128,7 +128,7 @@ export default function EnhancedCharts({ charts, mode = 'executive' }: EnhancedC
         case 'bar':
           return (
             <ResponsiveContainer {...chartProps}>
-              <BarChart data={chartData} clipPath="none" overflow="visible">
+              <BarChart data={chartData} >
                 <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
                 <XAxis 
                   dataKey={chart.xField || 'name'}
@@ -172,7 +172,7 @@ export default function EnhancedCharts({ charts, mode = 'executive' }: EnhancedC
         case 'histogram':
           return (
             <ResponsiveContainer {...chartProps}>
-              <BarChart data={chartData} clipPath="none" overflow="visible">
+              <BarChart data={chartData} >
                 <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
                 <XAxis 
                   dataKey={chart.xField || 'range'}
@@ -220,7 +220,7 @@ export default function EnhancedCharts({ charts, mode = 'executive' }: EnhancedC
 
           return (
             <ResponsiveContainer {...chartProps}>
-              <LineChart data={chartData} clipPath="none" overflow="visible">
+              <LineChart data={chartData} >
                 <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
                 <XAxis 
                   dataKey={chart.xField || 'index'}
@@ -305,7 +305,7 @@ export default function EnhancedCharts({ charts, mode = 'executive' }: EnhancedC
         case 'scatter':
           return (
             <ResponsiveContainer {...chartProps}>
-              <ScatterChart data={chartData} clipPath="none" overflow="visible">
+              <ScatterChart data={chartData} >
                 <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
                 <XAxis 
                   dataKey={chart.xField || 'x'}
