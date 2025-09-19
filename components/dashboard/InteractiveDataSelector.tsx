@@ -80,6 +80,7 @@ export function InteractiveDataSelector({ fileData, onDataSelected }: Interactiv
 
   const parseFileData = async (fileId: string, sheetName?: string) => {
     setIsLoading(true)
+    console.log('🔍 DEBUGGING: parseFileData called with:', { fileId, sheetName })
     try {
       const response = await fetch('/api/parse', {
         method: 'POST',
@@ -89,7 +90,54 @@ export function InteractiveDataSelector({ fileData, onDataSelected }: Interactiv
 
       if (response.ok) {
         const result = await response.json()
+        console.log('🔍 DEBUGGING: parseFileData response:', {
+          sheetName: result.sheetName,
+          availableSheets: result.availableSheets,
+          rawDataLength: result.rawData?.length,
+          needsAIHelp: result.needsAIHelp
+        })
 
+        // Process data directly without AI help for any sheet format
+        if (result.rawData && result.rawData.length > 0) {
+          const processedData = processRawDataDirectly(result.rawData)
+          console.log('🔍 DEBUGGING: Direct processing result:', {
+            originalRows: result.rawData.length,
+            processedRows: processedData.length,
+            columns: processedData.length > 0 ? Object.keys(processedData[0]) : []
+          })
+
+          if (processedData.length > 0) {
+            // Set up the component with processed data
+            const columns = Object.keys(processedData[0])
+            setAvailableColumns(columns)
+            setSampleData(processedData.slice(0, 5))
+            setAllData(processedData)
+            setSelectedSheet(result.sheetName)
+            setNeedsAIHelp(false)
+
+            // Initialize selections
+            const allRowIndices = new Set(processedData.map((_, idx) => idx))
+            setSelectedRows(allRowIndices)
+            setSelectedColumns(new Set(columns))
+            setStartIndex(0)
+            setEndIndex(processedData.length - 1)
+
+            // Initialize column filters
+            const filters = new Map<string, ColumnFilter>()
+            columns.forEach(col => {
+              const uniqueValues = Array.from(new Set(processedData.map(row => String(row[col] || ''))))
+              filters.set(col, {
+                column: col,
+                selectedValues: new Set(uniqueValues),
+                allValues: uniqueValues
+              })
+            })
+            setColumnFilters(filters)
+            return
+          }
+        }
+
+        // Fallback to AI processing if direct processing fails
         if (result.needsAIHelp) {
           setNeedsAIHelp(true)
           setRawData(result.rawData)
@@ -103,8 +151,106 @@ export function InteractiveDataSelector({ fileData, onDataSelected }: Interactiv
     }
   }
 
+  const processRawDataDirectly = (rawData: any[][]): any[] => {
+    if (!rawData || rawData.length === 0) return []
+
+    try {
+      // Smart header detection - find row with most text (not numbers)
+      let headerRowIndex = 0
+      let bestScore = -1
+
+      for (let i = 0; i < Math.min(5, rawData.length); i++) {
+        const row = rawData[i] || []
+        let textCount = 0
+        let numberCount = 0
+
+        for (const cell of row) {
+          const cellStr = String(cell || '').trim()
+          if (cellStr) {
+            if (isNaN(Number(cellStr))) {
+              textCount++ // Text is good for headers
+            } else {
+              numberCount++ // Numbers are usually data
+            }
+          }
+        }
+
+        const score = textCount - numberCount // Prefer rows with more text than numbers
+        console.log(`🔍 Row ${i}: ${textCount} text, ${numberCount} numbers, score: ${score}`)
+        console.log(`🔍 Row ${i} sample:`, row.slice(0, 3))
+
+        if (score > bestScore) {
+          bestScore = score
+          headerRowIndex = i
+        }
+      }
+
+      console.log(`🔍 SELECTED: Row ${headerRowIndex} as headers (score: ${bestScore})`)
+
+      const headerRow = rawData[headerRowIndex] || []
+      console.log(`🔍 RAW HEADERS:`, headerRow)
+
+      const dataRows = rawData.slice(headerRowIndex + 1)
+
+      // Keep original column names - minimal cleaning
+      const columnNames = headerRow.map((header, index) => {
+        const originalHeader = String(header || '').trim()
+
+        // Only use generic name if completely empty or "Unnamed"
+        if (!originalHeader || originalHeader.startsWith('Unnamed:')) {
+          return `Column_${index + 1}`
+        }
+
+        // Return the original header name with minimal cleaning
+        return originalHeader
+      })
+
+      console.log(`🔍 FINAL COLUMN NAMES:`, columnNames.slice(0, 10))
+
+      // Convert rows to objects
+      const processedData = dataRows
+        .map(row => {
+          const obj: any = {}
+          columnNames.forEach((colName, index) => {
+            const value = row?.[index]
+            obj[colName] = value
+          })
+          return obj
+        })
+        .filter(row => {
+          // Keep rows that have at least one non-empty value
+          return Object.values(row).some(val => val !== null && val !== undefined && String(val).trim() !== '')
+        })
+
+      console.log('🔍 DEBUGGING: Direct processing details:', {
+        headerRowIndex,
+        rawHeaderRow: headerRow.slice(0, 10),
+        cleanedColumnNames: columnNames.slice(0, 10),
+        totalColumns: columnNames.length,
+        sampleRow: processedData[0],
+        firstFewRawRows: rawData.slice(0, 5).map(row => row.slice(0, 5))
+      })
+
+      return processedData
+    } catch (error) {
+      console.error('Direct processing failed:', error)
+      return []
+    }
+  }
+
   const handleSheetChange = (sheetName: string) => {
+    console.log('🔍 DEBUGGING: Switching to sheet:', sheetName)
     setSelectedSheet(sheetName)
+
+    // Clear existing data when switching sheets
+    setAllData([])
+    setAvailableColumns([])
+    setSampleData([])
+    setSelectedRows(new Set())
+    setSelectedColumns(new Set())
+    setColumnFilters(new Map())
+    setNeedsAIHelp(true) // Force re-processing
+
     parseFileData(fileData.id, sheetName)
   }
 
@@ -248,6 +394,14 @@ export function InteractiveDataSelector({ fileData, onDataSelected }: Interactiv
     const xColumns = Array.from(selectedColumns).slice(0, 1) // First selected column as X
     const yColumns = Array.from(selectedColumns).slice(1) // Rest as Y
 
+    console.log('🔍 DEBUGGING: handleGenerate called with:')
+    console.log('Selected Sheet:', selectedSheet)
+    console.log('Filtered Data length:', filteredData.length)
+    console.log('First 3 rows of filtered data:', filteredData.slice(0, 3))
+    console.log('All data length:', allData.length)
+    console.log('Selected Rows:', selectedRows.size)
+    console.log('Selected Columns:', Array.from(selectedColumns))
+
     onDataSelected({
       sheetName: selectedSheet,
       xColumns,
@@ -299,50 +453,6 @@ export function InteractiveDataSelector({ fileData, onDataSelected }: Interactiv
 
   console.log('InteractiveDataSelector render: needsAIHelp=', needsAIHelp, 'rawData.length=', rawData.length, 'allData.length=', allData.length)
 
-  // TEMPORARILY BYPASS SmartDataSelector - go straight to new interface
-  if (needsAIHelp && rawData.length > 0) {
-    console.log('Bypassing SmartDataSelector, processing data directly')
-    // Process raw data directly without AI help
-    const headers = rawData[0] || []
-    const dataRows = rawData.slice(1)
-    const processedData = dataRows.map(row => {
-      const obj: any = {}
-      headers.forEach((header, idx) => {
-        obj[header || `Column ${idx + 1}`] = row[idx]
-      })
-      return obj
-    }).filter(row => Object.values(row).some(val => val))
-
-    // Set the data directly
-    if (processedData.length > 0 && allData.length === 0) {
-      const columns = Object.keys(processedData[0])
-      setAvailableColumns(columns)
-      setSampleData(processedData.slice(0, 5))
-      setAllData(processedData)
-      setNeedsAIHelp(false)
-
-      // Initialize selections
-      const allRowIndices = new Set(processedData.map((_, idx) => idx))
-      setSelectedRows(allRowIndices)
-      setSelectedColumns(new Set(columns))
-      setStartIndex(0)
-      setEndIndex(processedData.length - 1)
-
-      // Initialize column filters
-      const filters = new Map<string, ColumnFilter>()
-      columns.forEach(col => {
-        const uniqueValues = Array.from(new Set(processedData.map(row => String(row[col] || ''))))
-        filters.set(col, {
-          column: col,
-          selectedValues: new Set(uniqueValues),
-          allValues: uniqueValues
-        })
-      })
-      setColumnFilters(filters)
-    }
-  }
-
-  console.log('Showing NEW interactive interface')
   return (
     <div className="space-y-6">
       <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-4 rounded-lg border border-green-400">
