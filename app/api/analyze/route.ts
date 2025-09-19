@@ -179,17 +179,68 @@ Respond with raw JSON only.`
     const result = await response.json()
     const analysis = JSON.parse(result.choices?.[0]?.message?.content || '{}')
     
-    // Generate actual chart data
-    const charts = generateChartsFromData(data, dataSummary, analysis.recommendedCharts || [])
-
-    return {
-      summary: analysis.summary || 'Data analysis completed successfully.',
-      insights: analysis.insights || 'Key patterns and trends identified in the dataset.',
-      charts: charts,
-      data: data,
-      columns: dataSummary.columns,
-      dataInfo: dataSummary
+    // Generate actual chart data with more diversity
+  const charts = generateChartsFromData(data, dataSummary, analysis.recommendedCharts || [])
+  
+  // Enhance chart diversity - ensure we have different chart types and limit total charts
+  const uniqueCharts: any[] = []
+  const chartTypesSeen = new Set<string>()
+  const maxChartsPerType = 2
+  
+  // Filter charts to ensure diversity and limit quantity
+  charts.forEach(chart => {
+    const chartIdentifier = `${chart.type}-${chart.xField}-${chart.yField}`
+    if (!chartTypesSeen.has(chartIdentifier) || chartTypesSeen.size < maxChartsPerType * 4) {
+      chartTypesSeen.add(chartIdentifier)
+      uniqueCharts.push(chart)
     }
+  })
+  
+  // Limit to maximum 8 charts total
+  const finalCharts = uniqueCharts.slice(0, 8)
+  
+  // Add histogram charts for numeric distributions if we have space
+  if (finalCharts.length < 6) {
+    dataSummary.numericColumns.slice(0, 2).forEach(col => {
+      const histData = generateHistogramData(data, col)
+      if (histData.length > 0) {
+        finalCharts.push({
+          id: `histogram_${col}`,
+          title: `${col} Distribution`,
+          type: 'histogram',
+          xField: 'range',
+          yField: 'count',
+          data: histData
+        })
+      }
+    })
+  }
+  
+  // Add pie charts for categorical distributions if we have space
+  if (finalCharts.length < 8) {
+    dataSummary.categoricalColumns.slice(0, 2).forEach(col => {
+      const pieData = generateCategoricalDistribution(data, col)
+      if (pieData.length > 0 && pieData.length <= 10) { // Only if reasonable number of categories
+        finalCharts.push({
+          id: `pie_${col}`,
+          title: `${col} Distribution`,
+          type: 'pie',
+          xField: 'category',
+          yField: 'value',
+          data: pieData
+        })
+      }
+    })
+  }
+
+  return {
+    summary: analysis.summary || 'Data analysis completed successfully.',
+    insights: analysis.insights || 'Key patterns and trends identified in the dataset.',
+    charts: finalCharts.slice(0, 8), // Ensure we never exceed 8 charts
+    data: data,
+    columns: dataSummary.columns,
+    dataInfo: dataSummary
+  }
   } catch (error) {
     console.error('LLM analysis error:', error)
     // Fallback analysis
@@ -401,9 +452,12 @@ function generateChartsFromData(data: any[], summary: DataSummary, recommendatio
       })
     })
 
-    // 3. Correlation Analysis - Numeric vs Numeric scatter plots
-    for (let i = 0; i < summary.numericColumns.length; i++) {
-      for (let j = i + 1; j < summary.numericColumns.length; j++) {
+    // 3. Correlation Analysis - Numeric vs Numeric scatter plots (DISABLED for now due to frontend support issues)
+    // Commented out scatter plot generation to prevent unsupported chart types
+    /*
+    let scatterChartCount = 0;
+    for (let i = 0; i < summary.numericColumns.length && scatterChartCount < 3; i++) {
+      for (let j = i + 1; j < summary.numericColumns.length && scatterChartCount < 3; j++) {
         const col1 = summary.numericColumns[i]
         const col2 = summary.numericColumns[j]
         const scatterData = generateScatterData(data, col1, col2)
@@ -417,9 +471,13 @@ function generateChartsFromData(data: any[], summary: DataSummary, recommendatio
             yField: col2,
             data: scatterData
           })
+          scatterChartCount++;
+          if (scatterChartCount >= 3) break;
         }
       }
+      if (scatterChartCount >= 3) break;
     }
+    */
 
     // 4. Top/Bottom Analysis for each numeric column
     summary.numericColumns.forEach(numCol => {
@@ -434,7 +492,7 @@ function generateChartsFromData(data: any[], summary: DataSummary, recommendatio
             type: 'bar',
             xField: bestCatCol,
             yField: numCol,
-            data: topBottomData.slice(0, 10) // Top 10
+            data: topBottomData // All data
           })
         }
       }
@@ -490,7 +548,6 @@ function generateTimeSeriesData(data: any[], dateCol: string, numCol: string): a
       value: Math.round(value * 100) / 100
     }))
     .sort((a, b) => a.date.localeCompare(b.date))
-    .slice(0, 50)
 }
 
 // Helper function to generate categorical data
@@ -506,7 +563,6 @@ function generateCategoricalData(data: any[], catCol: string, numCol: string): a
 
   return Object.entries(aggregation)
     .sort(([,a], [,b]) => (b as number) - (a as number))
-    .slice(0, 15)
     .map(([category, value]) => ({
       [catCol]: category,
       [numCol]: Math.round(value * 100) / 100,
@@ -524,7 +580,75 @@ function generateScatterData(data: any[], col1: string, col2: string): any[] {
       [col2]: Number(row[col2]) || 0,
       name: `${row[col1]}, ${row[col2]}`
     }))
-    .slice(0, 100)
+}
+
+// Helper function to generate histogram data for numeric distributions
+function generateHistogramData(data: any[], column: string): any[] {
+  // Extract numeric values
+  const values = data
+    .map(row => Number(row[column]))
+    .filter(val => !isNaN(val))
+    .sort((a, b) => a - b);
+  
+  if (values.length === 0) return [];
+  
+  // Calculate histogram bins
+  const min = Math.min(...values);
+  const max = Math.max(...values);
+  const range = max - min;
+  if (range === 0) return [{ range: String(min), count: values.length, name: String(min), value: values.length }];
+  
+  const binCount = Math.min(10, Math.max(5, Math.floor(Math.sqrt(values.length))));
+  const binWidth = range / binCount;
+  
+  // Initialize bins
+  const bins: { [key: string]: number } = {};
+  for (let i = 0; i < binCount; i++) {
+    const start = min + (i * binWidth);
+    const end = min + ((i + 1) * binWidth);
+    const rangeLabel = i === binCount - 1 
+      ? `${start.toFixed(0)}+` 
+      : `${start.toFixed(0)}-${end.toFixed(0)}`;
+    bins[rangeLabel] = 0;
+  }
+  
+  // Fill bins
+  values.forEach(val => {
+    const binIndex = Math.min(binCount - 1, Math.floor((val - min) / binWidth));
+    const start = min + (binIndex * binWidth);
+    const end = min + ((binIndex + 1) * binWidth);
+    const rangeLabel = binIndex === binCount - 1 
+      ? `${start.toFixed(0)}+` 
+      : `${start.toFixed(0)}-${end.toFixed(0)}`;
+    bins[rangeLabel]++;
+  });
+  
+  // Convert to chart format
+  return Object.entries(bins).map(([range, count]) => ({
+    range,
+    count,
+    name: range,
+    value: count
+  }));
+}
+
+// Helper function to generate categorical distribution data
+function generateCategoricalDistribution(data: any[], column: string): any[] {
+  const counts: { [key: string]: number } = {};
+  
+  data.forEach(row => {
+    const value = String(row[column] || 'Unknown');
+    counts[value] = (counts[value] || 0) + 1;
+  });
+  
+  return Object.entries(counts)
+    .sort(([,a], [,b]) => b - a)
+    .map(([category, count]) => ({
+      category,
+      value: count,
+      name: category,
+      count: count
+    }));
 }
 
 // Helper function to generate top/bottom analysis

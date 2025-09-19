@@ -4,7 +4,7 @@
 export const THOMPSON_BRAND = {
   navy: '#0b1642',
   blue: '#17296f',
-  lime: '#a7ff03',
+  lime: '#5a8c00', // Darkened from #a7ff03 to improve readability
   text: '#282828',
   paper: '#ffffff',
   panel: '#fafafa',
@@ -106,7 +106,7 @@ export function formatNumber(value: number, type: 'currency' | 'percentage' | 'n
 }
 
 // Generate executive-friendly chart titles
-export function generateChartTitle(data: any[], xField: string, yField: string, chartType: 'bar' | 'line' | 'pie'): {
+export function generateChartTitle(data: any[], xField: string, yField: string, chartType: 'bar' | 'line' | 'pie' | 'scatter' | 'histogram'): {
   title: string
   subtitle: string
 } {

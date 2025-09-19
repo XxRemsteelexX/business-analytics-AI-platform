@@ -139,9 +139,10 @@ h1, h2, h3, h4, h5, h6 {
 .chart-container {
   background: var(--thompson-white);
   border-radius: 12px;
-  padding: 24px;
+  padding: 0;
   border: 1px solid #e3e8ee;
   position: relative;
+  overflow: visible;
 }
 
 .chart-expand-button {
@@ -457,9 +458,10 @@ h3 {
 .chart-container {
   background: var(--thompson-white);
   border-radius: 12px;
-  padding: 24px;
+  padding: 0;
   box-shadow: 0 4px 16px rgba(11, 22, 66, 0.08);
   border: 1px solid rgba(11, 22, 66, 0.05);
+  overflow: visible;
 }
 
 /* Professional animations */
@@ -874,6 +876,77 @@ svg.recharts-surface {
   padding: 24px !important;
   margin: 20px !important;
   box-shadow: 0 8px 32px rgba(11, 22, 66, 0.2) !important;
+}
+
+/* Fix Recharts label clipping */
+.recharts-wrapper {
+  overflow: visible !important;
+}
+
+.recharts-surface {
+  overflow: visible !important;
+}
+
+.recharts-layer {
+  overflow: visible !important;
+}
+
+.recharts-cartesian-axis-tick {
+  overflow: visible !important;
+}
+
+.recharts-text {
+  overflow: visible !important;
+}
+
+/* Remove clipping paths from all chart SVGs */
+svg.recharts-surface {
+  overflow: visible !important;
+}
+
+svg.recharts-surface defs clipPath {
+  display: none !important;
+}
+
+/* Force all chart text elements to be visible */
+.recharts-wrapper .recharts-text {
+  overflow: visible !important;
+  clip-path: none !important;
+}
+
+/* Ensure axis labels are not clipped */
+.recharts-xAxis .recharts-text,
+.recharts-yAxis .recharts-text {
+  overflow: visible !important;
+  clip-path: none !important;
+}
+
+/* Specific fix for Y-axis top tick labels */
+.recharts-yAxis .recharts-cartesian-axis-tick {
+  overflow: visible !important;
+  clip-path: none !important;
+}
+
+.recharts-yAxis .recharts-cartesian-axis-tick text {
+  overflow: visible !important;
+  clip-path: none !important;
+}
+
+/* Force all chart axis containers to be visible */
+.recharts-cartesian-axis {
+  overflow: visible !important;
+}
+
+/* Remove any transform clipping on Y-axis */
+.recharts-yAxis g {
+  overflow: visible !important;
+  clip-path: none !important;
+}
+
+/* Override any SVG viewBox clipping */
+svg.recharts-surface > g {
+  overflow: visible !important;
+  clip-path: none !important;
 }
 
 /* Override Tailwind utility classes that might be causing transparency */

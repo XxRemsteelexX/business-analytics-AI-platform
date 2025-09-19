@@ -1,19 +1,20 @@
 
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
-import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, LineChart, Line, PieChart, Pie, Cell } from 'recharts'
+import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, LineChart, Line, PieChart, Pie, Cell, ScatterChart, Scatter } from 'recharts'
 import { Expand, Download, TrendingUp } from 'lucide-react'
 import { CHART_COLORS, formatNumber, friendlyLabel, generateChartTitle } from '@/lib/chart-utils'
 import { ChartExplanation } from './ChartExplanation'
 import { ProjectionsButton } from './ProjectionsButton'
+import { DataFilterControls } from './data-filter-controls'
 import { explainTimeSeries, explainCategoryBar, explainScatter } from '@/lib/chart-explanations'
 
 interface ChartData {
   id: string
-  type: 'bar' | 'line' | 'pie'
+  type: 'bar' | 'line' | 'pie' | 'scatter' | 'histogram'
   title: string
   data: any[]
   xField?: string
@@ -27,6 +28,8 @@ interface EnhancedChartsProps {
 
 export default function EnhancedCharts({ charts, mode = 'executive' }: EnhancedChartsProps) {
   const [selectedChart, setSelectedChart] = useState<ChartData | null>(null)
+  const [filteredData, setFilteredData] = useState<Record<string, any[]>>({})
+  const [dataRange, setDataRange] = useState<{start: number, end: number} | null>(null)
   
   console.log('EnhancedCharts received:', { charts, mode })
 
@@ -34,20 +37,30 @@ export default function EnhancedCharts({ charts, mode = 'executive' }: EnhancedC
   const generateExplanation = (chart: ChartData) => {
     console.log('Generating explanation for chart:', chart)
     try {
+      // Use filtered data if available, otherwise use original data
+      const chartData = filteredData[chart.id] || chart.data
+      
       if (chart.type === 'line' && chart.xField && chart.yField) {
         // For line charts, try time series explanation
-        const series = chart.data.map(item => ({
+        const series = chartData.map(item => ({
           t: item[chart.xField!],
           y: item[chart.yField!]
         }))
         return explainTimeSeries(chart.title, series)
       } else if (chart.type === 'bar' && chart.xField && chart.yField) {
         // For bar charts, use category explanation
-        const rows = chart.data.map(item => ({
+        const rows = chartData.map(item => ({
           category: item[chart.xField!],
           value: item[chart.yField!]
         }))
         return explainCategoryBar(chart.title, rows)
+      } else if (chart.type === 'scatter' && chart.xField && chart.yField) {
+        // For scatter charts, use scatter explanation
+        const rows = chartData.map(item => ({
+          x: item[chart.xField!],
+          y: item[chart.yField!]
+        }))
+        return explainScatter(chart.title, rows)
       }
       return {
         title: chart.title,
@@ -63,6 +76,24 @@ export default function EnhancedCharts({ charts, mode = 'executive' }: EnhancedC
     }
   }
 
+  // Handle data range changes from slider
+  const handleDataRangeChange = (start: number, end: number) => {
+    setDataRange({ start, end })
+    
+    // Update filtered data for each chart
+    const newFilteredData: Record<string, any[]> = {}
+    charts.forEach(chart => {
+      newFilteredData[chart.id] = chart.data.slice(start, end + 1)
+    })
+    setFilteredData(newFilteredData)
+  }
+
+  // Reset to show all data
+  const handleReset = () => {
+    setDataRange(null)
+    setFilteredData({})
+  }
+
   if (!charts || charts.length === 0) {
     return (
       <div className="text-center py-12 bg-slate-50 rounded-lg">
@@ -72,12 +103,19 @@ export default function EnhancedCharts({ charts, mode = 'executive' }: EnhancedC
     )
   }
 
+  // Get the first chart's data to determine total data size for slider
+  const firstChart = charts[0]
+  const totalDataSize = firstChart?.data?.length || 0
+
   const renderChart = (chart: ChartData, height = 350, showTitle = true) => {
+    // Use filtered data if available, otherwise use original data
+    const chartData = filteredData[chart.id] || chart.data
+    
     const chartProps = {
       width: '100%',
       height,
-      data: chart.data,
-      margin: { top: 20, right: 30, left: 20, bottom: 60 }
+      data: chartData,
+      margin: { top: 80, right: 50, left: 80, bottom: 100 }
     }
 
     // Generate executive-friendly titles
@@ -90,7 +128,7 @@ export default function EnhancedCharts({ charts, mode = 'executive' }: EnhancedC
         case 'bar':
           return (
             <ResponsiveContainer {...chartProps}>
-              <BarChart data={chart.data}>
+              <BarChart data={chartData} clipPath="none" overflow="visible">
                 <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
                 <XAxis 
                   dataKey={chart.xField || 'name'}
@@ -131,14 +169,58 @@ export default function EnhancedCharts({ charts, mode = 'executive' }: EnhancedC
             </ResponsiveContainer>
           )
 
+        case 'histogram':
+          return (
+            <ResponsiveContainer {...chartProps}>
+              <BarChart data={chartData} clipPath="none" overflow="visible">
+                <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
+                <XAxis 
+                  dataKey={chart.xField || 'range'}
+                  tick={{ fontSize: 12, fontFamily: 'Catamaran' }}
+                  tickLine={false}
+                  angle={-45}
+                  textAnchor="end"
+                  height={80}
+                  tickFormatter={(value) => friendlyLabel(String(value))}
+                />
+                <YAxis 
+                  tick={{ fontSize: 12, fontFamily: 'Catamaran' }}
+                  tickLine={false}
+                  tickFormatter={(value) => formatNumber(Number(value))}
+                />
+                <Tooltip 
+                  contentStyle={{
+                    backgroundColor: '#ffffff',
+                    border: '1px solid #0b1642',
+                    borderRadius: '8px',
+                    fontSize: 14,
+                    fontFamily: 'Catamaran'
+                  }}
+                  formatter={(value: any, name) => [formatNumber(Number(value)), friendlyLabel(String(name))]}
+                  labelFormatter={(label) => friendlyLabel(String(label))}
+                />
+                <Legend 
+                  verticalAlign="top" 
+                  wrapperStyle={{ fontSize: 12, fontFamily: 'Montserrat' }} 
+                />
+                <Bar 
+                  dataKey={chart.yField || 'count'}
+                  fill={CHART_COLORS[0]} 
+                  radius={[4, 4, 0, 0]}
+                  name={friendlyLabel(chart.yField || 'Count')}
+                />
+              </BarChart>
+            </ResponsiveContainer>
+          )
+
         case 'line':
-          const lineKeys = chart.data.length > 0 
-            ? Object.keys(chart.data[0]).filter(key => key !== 'index' && key !== 'name' && key !== chart.xField)
+          const lineKeys = chartData.length > 0 
+            ? Object.keys(chartData[0]).filter(key => key !== 'index' && key !== 'name' && key !== chart.xField)
             : []
 
           return (
             <ResponsiveContainer {...chartProps}>
-              <LineChart data={chart.data}>
+              <LineChart data={chartData} clipPath="none" overflow="visible">
                 <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
                 <XAxis 
                   dataKey={chart.xField || 'index'}
@@ -186,7 +268,7 @@ export default function EnhancedCharts({ charts, mode = 'executive' }: EnhancedC
             <ResponsiveContainer {...chartProps}>
               <PieChart>
                 <Pie
-                  data={chart.data}
+                  data={chartData}
                   cx="50%"
                   cy="50%"
                   labelLine={false}
@@ -195,7 +277,7 @@ export default function EnhancedCharts({ charts, mode = 'executive' }: EnhancedC
                   fill="#8884d8"
                   dataKey={chart.yField || 'value'}
                 >
-                  {chart.data.map((entry: any, entryIndex: number) => (
+                  {chartData.map((entry: any, entryIndex: number) => (
                     <Cell 
                       key={`cell-${entryIndex}`} 
                       fill={CHART_COLORS[entryIndex % CHART_COLORS.length]} 
@@ -220,13 +302,54 @@ export default function EnhancedCharts({ charts, mode = 'executive' }: EnhancedC
             </ResponsiveContainer>
           )
 
+        case 'scatter':
+          return (
+            <ResponsiveContainer {...chartProps}>
+              <ScatterChart data={chartData} clipPath="none" overflow="visible">
+                <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
+                <XAxis 
+                  dataKey={chart.xField || 'x'}
+                  tick={{ fontSize: 12, fontFamily: 'Catamaran' }}
+                  tickLine={false}
+                  type="number"
+                />
+                <YAxis 
+                  dataKey={chart.yField || 'y'}
+                  tick={{ fontSize: 12, fontFamily: 'Catamaran' }}
+                  tickLine={false}
+                  type="number"
+                />
+                <Tooltip 
+                  contentStyle={{
+                    backgroundColor: '#ffffff',
+                    border: '1px solid #0b1642',
+                    borderRadius: '8px',
+                    fontSize: 14,
+                    fontFamily: 'Catamaran'
+                  }}
+                  formatter={(value: any, name) => [formatNumber(Number(value)), friendlyLabel(String(name))]}
+                  labelFormatter={(label) => `Data Point: ${label}`}
+                />
+                <Legend 
+                  verticalAlign="top"
+                  wrapperStyle={{ fontSize: 12, fontFamily: 'Montserrat' }} 
+                />
+                <Scatter 
+                  dataKey={chart.yField || 'y'}
+                  fill={CHART_COLORS[0]}
+                  name="Data Points"
+                />
+              </ScatterChart>
+            </ResponsiveContainer>
+          )
+
         default:
           return <div className="text-gray-500">Unsupported chart type: {chart.type}</div>
       }
     }
 
     return (
-      <div>
+      <div style={{ overflow: 'visible' }}>
         {showTitle && (
           <div className="mb-4">
             <h4 className="text-h2 mb-2">{title}</h4>
@@ -235,15 +358,54 @@ export default function EnhancedCharts({ charts, mode = 'executive' }: EnhancedC
             )}
           </div>
         )}
-        <ChartComponent />
+        <div style={{ overflow: 'visible', position: 'relative' }}>
+          <ChartComponent />
+        </div>
       </div>
     )
   }
 
-  const chartsToShow = mode === 'executive' ? charts.slice(0, 3) : charts
+  // Limit charts and ensure diversity
+  const chartsToShow = (() => {
+    if (mode === 'executive') {
+      // For executive mode, show max 3 charts with diversity
+      const seenTypes = new Set();
+      const uniqueCharts: ChartData[] = [];
+      
+      for (const chart of charts) {
+        if (uniqueCharts.length >= 3) break;
+        if (!seenTypes.has(chart.type)) {
+          seenTypes.add(chart.type);
+          uniqueCharts.push(chart);
+        }
+      }
+      
+      // If we don't have 3 unique types, fill with remaining charts
+      if (uniqueCharts.length < 3) {
+        const remaining = charts.filter(chart => 
+          !uniqueCharts.some(c => c.id === chart.id)
+        ).slice(0, 3 - uniqueCharts.length);
+        uniqueCharts.push(...remaining);
+      }
+      
+      return uniqueCharts;
+    }
+    return charts;
+  })();
 
   return (
     <div className="space-y-8">
+      {/* Data Filter Controls - show for all datasets with data */}
+      {totalDataSize > 0 && (
+        <div className="mb-6">
+          <DataFilterControls 
+            data={firstChart.data} 
+            onDataRangeChange={handleDataRangeChange}
+            onReset={handleReset}
+          />
+        </div>
+      )}
+      
       {chartsToShow.map((chart, index) => (
         <div key={chart.id || index} className="chart-container">
           {/* Chart expand button */}
@@ -278,7 +440,7 @@ export default function EnhancedCharts({ charts, mode = 'executive' }: EnhancedC
           </Dialog>
 
           {/* Main chart */}
-          <div className="h-[400px]">
+          <div className="h-[450px] mb-6">
             {renderChart(chart)}
           </div>
           
@@ -286,14 +448,10 @@ export default function EnhancedCharts({ charts, mode = 'executive' }: EnhancedC
           <ChartExplanation mode={mode} summary={generateExplanation(chart)} />
           
           {/* Projections Button for time series */}
-          {chart.type === 'line' && chart.xField && chart.yField && (
-            <div className="mt-3">
-              <ProjectionsButton series={chart.data.map(item => ({
-                t: item[chart.xField!],
-                y: item[chart.yField!]
-              }))} />
-            </div>
-          )}
+          <ProjectionsButton series={(filteredData[chart.id] || chart.data).map((item) => ({
+            t: chart.xField ? item[chart.xField] : item.index || item.name,
+            y: chart.yField ? item[chart.yField] : item.value
+          }))} />
         </div>
       ))}
 

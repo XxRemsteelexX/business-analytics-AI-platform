@@ -31,7 +31,7 @@ export default function ProfessionalCharts({ charts }: ChartProps) {
       case 'bar':
         return (
           <ResponsiveContainer {...chartProps}>
-            <BarChart data={chart.data}>
+            <BarChart data={chart.data} clipPath={false}>
               <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
               <XAxis 
                 dataKey="name" 
@@ -71,7 +71,7 @@ export default function ProfessionalCharts({ charts }: ChartProps) {
         const lineKeys = Object.keys(chart.data[0] || {}).filter(key => key !== 'index' && key !== 'name')
         return (
           <ResponsiveContainer {...chartProps}>
-            <LineChart data={chart.data}>
+            <LineChart data={chart.data} clipPath={false}>
               <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
               <XAxis 
                 dataKey="index" 
@@ -149,7 +149,7 @@ export default function ProfessionalCharts({ charts }: ChartProps) {
       case 'scatter':
         return (
           <ResponsiveContainer {...chartProps}>
-            <ScatterChart data={chart.data}>
+            <ScatterChart data={chart.data} clipPath={false}>
               <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
               <XAxis 
                 dataKey="x" 
