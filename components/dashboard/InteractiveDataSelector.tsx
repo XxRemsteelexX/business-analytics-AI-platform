@@ -348,7 +348,7 @@ export function InteractiveDataSelector({ fileData, onDataSelected }: Interactiv
       <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-4 rounded-lg border border-green-400">
         <h3 className="text-xl font-bold text-green-900 mb-2 flex items-center">
           <Filter className="w-6 h-6 mr-2" />
-          🆕 INTERACTIVE DATA SELECTION (NEW VERSION)
+          🆕 INTERACTIVE DATA SELECTION
         </h3>
         <p className="text-sm text-green-700 font-semibold">
           ✅ Checkbox-based selection | ✅ Row filters | ✅ Column value filters | ✅ Real-time updates
