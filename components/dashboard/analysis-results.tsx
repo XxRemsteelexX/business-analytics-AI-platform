@@ -22,7 +22,7 @@ import { ExecutiveKPIs } from './executive-kpis'
 import { ViewModeToggle } from './view-mode-toggle'
 import { ColumnEditor } from './column-editor'
 import { ExecutiveInsights } from './executive-insights'
-import { DataSelector } from './DataSelector'
+import { InteractiveDataSelector } from './InteractiveDataSelector'
 import { calculateKPIs, generateInsights } from '@/lib/chart-utils'
 import { performExecutiveAnalysis } from '@/lib/advanced-analysis'
 
@@ -52,6 +52,8 @@ export function AnalysisResults({ fileData, onAnalysisComplete, onCustomChartsUp
   const [showDataSelector, setShowDataSelector] = useState(true)
   const [selectedData, setSelectedData] = useState<any>(null)
   const { toast } = useToast()
+
+  console.log('DEBUG: showDataSelector=', showDataSelector, 'analysisData=', analysisData, 'fileData=', fileData)
 
   // Auto-analysis is now disabled - user must select data first
   // useEffect(() => {
@@ -149,7 +151,8 @@ export function AnalysisResults({ fileData, onAnalysisComplete, onCustomChartsUp
 
   const handleDataSelected = async (selection: any) => {
     setSelectedData(selection)
-    setShowDataSelector(false)
+    // Keep data selector visible for real-time changes
+    // setShowDataSelector(false)
     
     // Create a modified fileData with selected data
     const modifiedFileData = {
@@ -282,14 +285,14 @@ export function AnalysisResults({ fileData, onAnalysisComplete, onCustomChartsUp
 
   return (
     <div className="space-y-8">
-      {/* Show Data Selector if no analysis done yet */}
-      {showDataSelector && !analysisData && (
+      {/* Show Data Selector - always visible for real-time changes */}
+      {showDataSelector && (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           className="bg-white rounded-lg border border-gray-200 p-6"
         >
-          <DataSelector 
+          <InteractiveDataSelector
             fileData={fileData}
             onDataSelected={handleDataSelected}
           />

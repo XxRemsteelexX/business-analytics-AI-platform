@@ -17,6 +17,7 @@ interface SmartDataSelectorProps {
 
 export function SmartDataSelector({ rawData, sheetName, onDataStructureIdentified }: SmartDataSelectorProps) {
   const [step, setStep] = useState<'analyzing' | 'header' | 'columns' | 'done'>('analyzing')
+  console.log('SmartDataSelector current step:', step)
   const [aiSuggestion, setAiSuggestion] = useState<string>('')
   const [headerOptions, setHeaderOptions] = useState<number[]>([])
   const [selectedHeaderRow, setSelectedHeaderRow] = useState<number>(-1)
@@ -116,6 +117,7 @@ Focus on business-relevant columns with data that can be visualized.`,
   }
 
   const handleHeaderSelection = (rowIndex: number) => {
+    console.log('Header row selected:', rowIndex)
     setSelectedHeaderRow(rowIndex)
     
     // Update column options based on selected header
@@ -143,10 +145,11 @@ Focus on business-relevant columns with data that can be visualized.`,
   }
 
   const handleFinish = () => {
+    console.log('SmartDataSelector handleFinish called!')
     const headerRow = rawData[selectedHeaderRow] || []
     const dataStartRow = selectedHeaderRow + 1
     const dataEndRow = rawData.length - 1
-    
+
     // Create processed data
     const dataRows = rawData.slice(dataStartRow)
     const processedData = dataRows.map(row => {
@@ -158,6 +161,14 @@ Focus on business-relevant columns with data that can be visualized.`,
       })
       return obj
     }).filter(row => Object.values(row).some(val => val))
+
+    console.log('Calling onDataStructureIdentified with:', {
+      headerRow: selectedHeaderRow,
+      dataStartRow,
+      dataEndRow,
+      selectedColumns: selectedColumns.length,
+      processedData: processedData.length
+    })
 
     onDataStructureIdentified({
       headerRow: selectedHeaderRow,
