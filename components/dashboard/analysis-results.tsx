@@ -23,8 +23,6 @@ import { ViewModeToggle } from './view-mode-toggle'
 import { ColumnEditor } from './column-editor'
 import { ExecutiveInsights } from './executive-insights'
 import { InteractiveDataSelector } from './InteractiveDataSelector'
-import { calculateKPIs, generateInsights } from '@/lib/chart-utils'
-import { performExecutiveAnalysis } from '@/lib/advanced-analysis'
 
 // Dynamic import for charts to avoid SSR issues
 const EnhancedCharts = dynamic(() => import('./enhanced-charts'), {
@@ -85,20 +83,6 @@ export function AnalysisResults({ fileData, onAnalysisComplete, onCustomChartsUp
       if (response.ok) {
         const result = await response.json()
         
-        // Enhance analysis with CEO-friendly KPIs and advanced insights
-        if (result.data && result.columns) {
-          result.kpis = calculateKPIs(result.data, result.columns)
-          result.enhancedInsights = generateInsights(result.data, result.columns)
-          
-          // Perform advanced executive analysis
-          const executiveAnalysis = performExecutiveAnalysis(result.data, result.columns)
-          result.executiveAnalysis = executiveAnalysis
-          
-          // Override summary with executive analysis if available
-          if (executiveAnalysis.summary) {
-            result.enhancedInsights = executiveAnalysis.summary
-          }
-        }
         
         setAnalysisData(result)
         onAnalysisComplete?.(result)
@@ -186,20 +170,6 @@ export function AnalysisResults({ fileData, onAnalysisComplete, onCustomChartsUp
       if (response.ok) {
         const result = await response.json()
         
-        // Enhance analysis with CEO-friendly KPIs and advanced insights
-        if (result.data && result.columns) {
-          result.kpis = calculateKPIs(result.data, result.columns)
-          result.enhancedInsights = generateInsights(result.data, result.columns)
-          
-          // Perform advanced executive analysis
-          const executiveAnalysis = performExecutiveAnalysis(result.data, result.columns)
-          result.executiveAnalysis = executiveAnalysis
-          
-          // Override summary with executive analysis if available
-          if (executiveAnalysis.summary) {
-            result.enhancedInsights = executiveAnalysis.summary
-          }
-        }
         
         setAnalysisData(result)
         onAnalysisComplete?.(result)
