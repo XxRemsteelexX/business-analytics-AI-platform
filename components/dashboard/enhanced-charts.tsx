@@ -289,9 +289,10 @@ export default function EnhancedCharts({ charts, mode = 'executive', enableForec
                     fontFamily: 'Catamaran'
                   }}
                   formatter={(value: any, name) => {
-                    const isConfidence = name.includes('_upper') || name.includes('_lower')
+                    const nameStr = String(name)
+                    const isConfidence = nameStr.includes('_upper') || nameStr.includes('_lower')
                     if (isConfidence) return null // Hide confidence bounds from tooltip
-                    const displayName = friendlyLabel(String(name))
+                    const displayName = friendlyLabel(nameStr)
                     return [formatNumber(Number(value)), displayName]
                   }}
                   labelFormatter={(label, payload) => {
