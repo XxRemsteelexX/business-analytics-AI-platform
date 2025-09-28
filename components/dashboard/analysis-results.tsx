@@ -23,6 +23,7 @@ import { ViewModeToggle } from './view-mode-toggle'
 import { ColumnEditor } from './column-editor'
 import { ExecutiveInsights } from './executive-insights'
 import { InteractiveDataSelector } from './InteractiveDataSelector'
+import { canForecast } from '@/lib/forecast-utils'
 
 // Dynamic import for charts to avoid SSR issues
 const EnhancedCharts = dynamic(() => import('./enhanced-charts'), {
@@ -49,6 +50,8 @@ export function AnalysisResults({ fileData, onAnalysisComplete, onCustomChartsUp
   const [customCharts, setCustomCharts] = useState<any[]>([])
   const [showDataSelector, setShowDataSelector] = useState(true)
   const [selectedData, setSelectedData] = useState<any>(null)
+  const [enableForecasting, setEnableForecasting] = useState(false)
+  const [forecastableCharts, setForecastableCharts] = useState<any[]>([])
   const { toast } = useToast()
 
   console.log('DEBUG: showDataSelector=', showDataSelector, 'analysisData=', analysisData, 'fileData=', fileData)
@@ -86,6 +89,10 @@ export function AnalysisResults({ fileData, onAnalysisComplete, onCustomChartsUp
         
         setAnalysisData(result)
         onAnalysisComplete?.(result)
+        
+        // Check for forecastable charts
+        const forecastable = (result.charts || []).filter(canForecast)
+        setForecastableCharts(forecastable)
         
         toast({
           title: 'Analysis Complete',
@@ -173,6 +180,10 @@ export function AnalysisResults({ fileData, onAnalysisComplete, onCustomChartsUp
         
         setAnalysisData(result)
         onAnalysisComplete?.(result)
+        
+        // Check for forecastable charts
+        const forecastable = (result.charts || []).filter(canForecast)
+        setForecastableCharts(forecastable)
         
         toast({
           title: 'Analysis Complete',
@@ -269,6 +280,35 @@ export function AnalysisResults({ fileData, onAnalysisComplete, onCustomChartsUp
         </motion.div>
       )}
 
+      {/* Actions toolbar - show above the file info when analysis is done */}
+      {analysisData && (
+        <div className="flex flex-wrap items-center gap-2">
+          <Button 
+            size="sm" 
+            variant="outline" 
+            onClick={handleStartOver}
+            className="bg-orange-50 border-orange-300 text-orange-700 hover:bg-orange-100 text-xs px-2 py-2"
+          >
+            <Settings className="w-3 h-3 mr-1" />
+            Start Over
+          </Button>
+          {analysisData?.columns && (
+            <ColumnEditor 
+              columns={analysisData.columns} 
+              onMappingChange={handleColumnMappingChange}
+            />
+          )}
+          <Button size="sm" variant="outline" className="text-xs px-2 py-2">
+            <Download className="w-3 h-3 mr-1" />
+            Export Report
+          </Button>
+          <Button size="sm" variant="outline" className="text-xs px-2 py-2">
+            <Eye className="w-3 h-3 mr-1" />
+            Present Mode
+          </Button>
+        </div>
+      )}
+
       {/* File Info Header - only show when analysis is done */}
       {analysisData && (
         <motion.div
@@ -288,37 +328,60 @@ export function AnalysisResults({ fileData, onAnalysisComplete, onCustomChartsUp
               </p>
             </div>
           </div>
-          <div className="flex gap-2">
-            <Button 
-              size="sm" 
-              variant="outline" 
-              onClick={handleStartOver}
-              className="bg-orange-50 border-orange-300 text-orange-700 hover:bg-orange-100"
-            >
-              <Settings className="w-4 h-4 mr-2" />
-              Start Over
-            </Button>
-            {analysisData?.columns && (
-              <ColumnEditor 
-                columns={analysisData.columns} 
-                onMappingChange={handleColumnMappingChange}
-              />
-            )}
-            <Button size="sm" variant="outline">
-              <Download className="w-4 h-4 mr-2" />
-              Export Report
-            </Button>
-            <Button size="sm" variant="outline">
-              <Eye className="w-4 h-4 mr-2" />
-              Present Mode
-            </Button>
-          </div>
         </motion.div>
       )}
 
       {/* View Mode Toggle */}
       {analysisData && (
         <ViewModeToggle mode={viewMode} onModeChange={setViewMode} />
+      )}
+
+      {/* Predictive Analysis Prompt */}
+      {forecastableCharts.length > 0 && !enableForecasting && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200 p-6"
+        >
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <TrendingUp className="w-6 h-6 text-blue-600" />
+              <div>
+                <h3 className="font-semibold text-blue-900 mb-1">
+                  Predictive Analysis Available
+                </h3>
+                <p className="text-blue-700 text-sm">
+                  We detected {forecastableCharts.length} time-based metric{forecastableCharts.length > 1 ? 's' : ''} suitable for forecasting. 
+                  Would you like to include short-term predictions?
+                </p>
+              </div>
+            </div>
+            <div className="flex gap-3">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setForecastableCharts([])}
+                className="border-blue-300 text-blue-700 hover:bg-blue-100"
+              >
+                Not Now
+              </Button>
+              <Button
+                size="sm"
+                onClick={() => {
+                  setEnableForecasting(true)
+                  toast({
+                    title: 'Predictive Analysis Enabled',
+                    description: 'Forecasts will be added to your time-based charts.',
+                  })
+                }}
+                className="bg-blue-600 hover:bg-blue-700 text-white"
+              >
+                <TrendingUp className="w-4 h-4 mr-2" />
+                Enable Forecasting
+              </Button>
+            </div>
+          </div>
+        </motion.div>
       )}
 
       {/* Executive KPIs - Only in Executive Mode */}
@@ -387,7 +450,7 @@ export function AnalysisResults({ fileData, onAnalysisComplete, onCustomChartsUp
               {viewMode === 'executive' ? 'Key Visualizations' : 'Detailed Analytics'}
             </h3>
           </div>
-          <EnhancedCharts charts={analysisData.charts} mode={viewMode} />
+          <EnhancedCharts charts={analysisData.charts} mode={viewMode} enableForecasting={enableForecasting} />
         </motion.div>
       )}
 

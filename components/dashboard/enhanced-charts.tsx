@@ -11,6 +11,7 @@ import { ChartExplanation } from './ChartExplanation'
 import { ProjectionsButton } from './ProjectionsButton'
 import { DataFilterControls } from './data-filter-controls'
 import { explainTimeSeries, explainCategoryBar, explainScatter } from '@/lib/chart-explanations'
+import { canForecast, chartDataToTimeSeries, generateSmartForecast, generateForecastSummary } from '@/lib/forecast-utils'
 
 interface ChartData {
   id: string
@@ -24,12 +25,14 @@ interface ChartData {
 interface EnhancedChartsProps {
   charts: ChartData[]
   mode?: 'executive' | 'analyst'
+  enableForecasting?: boolean
 }
 
-export default function EnhancedCharts({ charts, mode = 'executive' }: EnhancedChartsProps) {
+export default function EnhancedCharts({ charts, mode = 'executive', enableForecasting = false }: EnhancedChartsProps) {
   const [selectedChart, setSelectedChart] = useState<ChartData | null>(null)
   const [filteredData, setFilteredData] = useState<Record<string, any[]>>({})
   const [dataRange, setDataRange] = useState<{start: number, end: number} | null>(null)
+  const [forecastData, setForecastData] = useState<Record<string, any>>({})
   
   console.log('EnhancedCharts received:', { charts, mode })
 
@@ -107,9 +110,33 @@ export default function EnhancedCharts({ charts, mode = 'executive' }: EnhancedC
   const firstChart = charts[0]
   const totalDataSize = firstChart?.data?.length || 0
 
+  // Generate forecast data for line charts if enabled
+  const generateForecastForChart = (chart: ChartData) => {
+    if (!enableForecasting || !canForecast(chart) || forecastData[chart.id]) return
+    
+    try {
+      const timeSeries = chartDataToTimeSeries(chart)
+      if (timeSeries.length >= 8) {
+        const forecast = generateSmartForecast(timeSeries, 6)
+        setForecastData(prev => ({
+          ...prev,
+          [chart.id]: forecast
+        }))
+      }
+    } catch (error) {
+      console.log('Forecast generation failed for chart:', chart.id, error)
+    }
+  }
+
   const renderChart = (chart: ChartData, height = 350, showTitle = true) => {
+    // Generate forecast if needed
+    if (enableForecasting && canForecast(chart)) {
+      generateForecastForChart(chart)
+    }
+    
     // Use filtered data if available, otherwise use original data
     const chartData = filteredData[chart.id] || chart.data
+    const chartForecast = forecastData[chart.id]
     
     const chartProps = {
       width: '100%',
@@ -218,9 +245,29 @@ export default function EnhancedCharts({ charts, mode = 'executive' }: EnhancedC
             ? Object.keys(chartData[0]).filter(key => key !== 'index' && key !== 'name' && key !== chart.xField)
             : []
 
+          // Combine historical and forecast data
+          let combinedData = chartData
+          if (chartForecast?.forecast) {
+            const forecastPoints = chartForecast.forecast.map((point: any) => {
+              const forecastPoint: any = {
+                [chart.xField || 'index']: point.t,
+                isForecast: true
+              }
+              lineKeys.forEach(key => {
+                if (key === chart.yField) {
+                  forecastPoint[key] = point.y
+                  forecastPoint[`${key}_upper`] = point.upperBound
+                  forecastPoint[`${key}_lower`] = point.lowerBound
+                }
+              })
+              return forecastPoint
+            })
+            combinedData = [...chartData, ...forecastPoints]
+          }
+
           return (
             <ResponsiveContainer {...chartProps}>
-              <LineChart data={chartData} >
+              <LineChart data={combinedData} >
                 <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
                 <XAxis 
                   dataKey={chart.xField || 'index'}
@@ -241,13 +288,23 @@ export default function EnhancedCharts({ charts, mode = 'executive' }: EnhancedC
                     fontSize: 14,
                     fontFamily: 'Catamaran'
                   }}
-                  formatter={(value: any, name) => [formatNumber(Number(value)), friendlyLabel(String(name))]}
-                  labelFormatter={(label) => friendlyLabel(String(label))}
+                  formatter={(value: any, name) => {
+                    const isConfidence = name.includes('_upper') || name.includes('_lower')
+                    if (isConfidence) return null // Hide confidence bounds from tooltip
+                    const displayName = friendlyLabel(String(name))
+                    return [formatNumber(Number(value)), displayName]
+                  }}
+                  labelFormatter={(label, payload) => {
+                    const point = payload?.[0]?.payload
+                    const baseLabel = friendlyLabel(String(label))
+                    return point?.isForecast ? `${baseLabel} (Forecast)` : baseLabel
+                  }}
                 />
                 <Legend 
                   verticalAlign="top" 
                   wrapperStyle={{ fontSize: 12, fontFamily: 'Montserrat' }} 
                 />
+                {/* Historical data lines */}
                 {lineKeys.map((key, keyIndex) => (
                   <Line
                     key={key}
@@ -255,10 +312,68 @@ export default function EnhancedCharts({ charts, mode = 'executive' }: EnhancedC
                     dataKey={key}
                     stroke={CHART_COLORS[keyIndex % CHART_COLORS.length]}
                     strokeWidth={3}
-                    dot={{ fill: CHART_COLORS[keyIndex % CHART_COLORS.length], strokeWidth: 2, r: 4 }}
+                    dot={(props) => {
+                      const { payload } = props
+                      if (payload?.isForecast) return false
+                      return (
+                        <circle 
+                          cx={props.cx} 
+                          cy={props.cy} 
+                          r={4} 
+                          fill={CHART_COLORS[keyIndex % CHART_COLORS.length]} 
+                          strokeWidth={2} 
+                          stroke={CHART_COLORS[keyIndex % CHART_COLORS.length]}
+                        />
+                      )
+                    }}
+                    connectNulls={false}
                     name={friendlyLabel(key)}
                   />
                 ))}
+                {/* Forecast lines (dashed) */}
+                {chartForecast?.forecast && lineKeys.map((key, keyIndex) => (
+                  <Line
+                    key={`forecast-${key}`}
+                    type="monotone"
+                    dataKey={key}
+                    stroke={CHART_COLORS[keyIndex % CHART_COLORS.length]}
+                    strokeWidth={2}
+                    strokeDasharray="8 4"
+                    dot={{ fill: CHART_COLORS[keyIndex % CHART_COLORS.length], strokeWidth: 2, r: 3, opacity: 0.8 }}
+                    connectNulls={false}
+                    name={`${friendlyLabel(key)} (Forecast)`}
+                    opacity={0.8}
+                  />
+                ))}
+                {/* Confidence bands (if available) */}
+                {chartForecast?.forecast && lineKeys.map((key, keyIndex) => {
+                  return [
+                    <Line
+                      key={`upper-${key}`}
+                      type="monotone"
+                      dataKey={`${key}_upper`}
+                      stroke={CHART_COLORS[keyIndex % CHART_COLORS.length]}
+                      strokeWidth={1}
+                      strokeDasharray="2 2"
+                      dot={false}
+                      opacity={0.4}
+                      connectNulls={false}
+                      legendType="none"
+                    />,
+                    <Line
+                      key={`lower-${key}`}
+                      type="monotone"
+                      dataKey={`${key}_lower`}
+                      stroke={CHART_COLORS[keyIndex % CHART_COLORS.length]}
+                      strokeWidth={1}
+                      strokeDasharray="2 2"
+                      dot={false}
+                      opacity={0.4}
+                      connectNulls={false}
+                      legendType="none"
+                    />
+                  ]
+                }).flat()}
               </LineChart>
             </ResponsiveContainer>
           )
@@ -443,6 +558,29 @@ export default function EnhancedCharts({ charts, mode = 'executive' }: EnhancedC
           <div className="h-[450px] mb-6">
             {renderChart(chart)}
           </div>
+          
+          {/* Forecast Summary - show if forecast is enabled and available */}
+          {enableForecasting && forecastData[chart.id] && (
+            <div className="mb-4 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <TrendingUp className="w-5 h-5 text-blue-600" />
+                  <h5 className="font-semibold text-blue-900">Predictive Analysis</h5>
+                </div>
+                <span className="text-xs text-blue-700 bg-blue-100 px-2 py-1 rounded">
+                  {forecastData[chart.id].methodology} • {forecastData[chart.id].accuracy}% Accuracy
+                </span>
+              </div>
+              <p className="text-blue-700 text-sm mt-2">
+                {generateForecastSummary(forecastData[chart.id], chart.yField || 'Metric')}
+              </p>
+              <div className="flex items-center mt-2 text-xs text-blue-600">
+                <span className="mr-4">📈 Next {forecastData[chart.id].forecast.length} periods forecast</span>
+                <span className="mr-4">📊 95% confidence interval</span>
+                <span>🎯 {forecastData[chart.id].confidence}% confidence level</span>
+              </div>
+            </div>
+          )}
           
           {/* Chart Explanation */}
           <ChartExplanation mode={mode} summary={generateExplanation(chart)} />
