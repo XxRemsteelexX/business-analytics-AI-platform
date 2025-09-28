@@ -76,9 +76,9 @@ export function ColumnEditor({ columns, onMappingChange }: ColumnEditorProps) {
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" size="sm">
-          <Settings className="w-4 h-4 mr-2" />
-          Edit Column Names
+        <Button variant="outline" size="sm" className="text-xs px-2 py-2">
+          <Settings className="w-3 h-3 mr-1" />
+          Edit Columns
         </Button>
       </DialogTrigger>
       

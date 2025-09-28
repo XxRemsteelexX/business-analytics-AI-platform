@@ -68,10 +68,16 @@ export function InteractiveDataSelector({ fileData, onDataSelected }: Interactiv
 
   useEffect(() => {
     if (fileData && fileData.id) {
+      console.log('🔍 DEBUGGING: fileData in InteractiveDataSelector:', {
+        selectedSheet: fileData.selectedSheet,
+        sheetNames: fileData.sheetNames
+      })
       if (fileData.sheetNames && fileData.sheetNames.length > 0) {
-        const firstSheet = fileData.sheetNames[0]
-        setSelectedSheet(firstSheet)
-        parseFileData(fileData.id, firstSheet)
+        // Use already selected sheet from upload process, or fallback to first sheet
+        const sheetToUse = fileData.selectedSheet || fileData.sheetNames[0]
+        console.log('🔍 DEBUGGING: Using sheet:', sheetToUse, 'from selectedSheet:', fileData.selectedSheet)
+        setSelectedSheet(sheetToUse)
+        parseFileData(fileData.id, sheetToUse)
       } else {
         parseFileData(fileData.id)
       }
@@ -118,7 +124,17 @@ export function InteractiveDataSelector({ fileData, onDataSelected }: Interactiv
             // Initialize selections
             const allRowIndices = new Set(processedData.map((_, idx) => idx))
             setSelectedRows(allRowIndices)
-            setSelectedColumns(new Set(columns))
+
+            // Preserve previously selected columns if possible; otherwise select all
+            setSelectedColumns(prev => {
+              const prevCols = Array.from(prev ?? [])
+              if (prevCols.length > 0) {
+                const intersection = prevCols.filter(c => columns.includes(c))
+                return new Set(intersection.length > 0 ? intersection : columns)
+              }
+              return new Set(columns)
+            })
+
             setStartIndex(0)
             setEndIndex(processedData.length - 1)
 
@@ -269,11 +285,20 @@ export function InteractiveDataSelector({ fileData, onDataSelected }: Interactiv
     setNeedsAIHelp(false)  // This will hide SmartDataSelector and show our new interface
     console.log('needsAIHelp set to false, should show new interface now')
 
-    // Initialize all rows and columns as selected
+    // Initialize all rows; preserve column selections if possible
     if (structure.processedData.length > 0) {
       const allRowIndices = new Set(structure.processedData.map((_, idx) => idx))
       setSelectedRows(allRowIndices)
-      setSelectedColumns(new Set(columns))
+
+      setSelectedColumns(prev => {
+        const prevCols = Array.from(prev ?? [])
+        if (prevCols.length > 0) {
+          const intersection = prevCols.filter(c => columns.includes(c))
+          return new Set(intersection.length > 0 ? intersection : columns)
+        }
+        return new Set(columns)
+      })
+
       setStartIndex(0)
       setEndIndex(structure.processedData.length - 1)
 
