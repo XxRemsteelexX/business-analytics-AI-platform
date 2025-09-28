@@ -315,7 +315,7 @@ export default function EnhancedCharts({ charts, mode = 'executive', enableForec
                     strokeWidth={3}
                     dot={(props) => {
                       const { payload } = props
-                      if (payload?.isForecast) return false
+                      if (payload?.isForecast) return <g />
                       return (
                         <circle 
                           cx={props.cx} 
